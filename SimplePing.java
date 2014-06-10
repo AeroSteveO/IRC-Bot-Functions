@@ -21,6 +21,11 @@ import org.pircbotx.hooks.events.MessageEvent;
  * Saved alongside Ping.java as a simple version that forgoes checking servers/sites
  * saved in an XML file
  * 
+ * Activate Command with:
+ *      !ping [host] [port]
+ *      !ping google.com
+ *      !ping mc.myminecraft.com 25565
+ * 
  */
 public class SimplePing extends ListenerAdapter{
     @Override
