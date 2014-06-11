@@ -22,6 +22,9 @@ import org.pircbotx.hooks.events.MessageEvent;
  * @author Steve-O
  * Based on the C# IRC bot, CasinoBot
  * which is generally unstable and requires windows to run
+ * 
+ * Activate Command with:
+ *      !bomb
  */
 public class GameBomb extends ListenerAdapter {
     // Woohooo basic variables for junk
@@ -64,12 +67,12 @@ public class GameBomb extends ListenerAdapter {
                     colours.clear();
                     queue.close();
                 }
-                else if (CurrentEvent.getMessage().equalsIgnoreCase(solution)&&CurrentEvent.getUser().getNick().equals(player)){
+                else if (CurrentEvent.getMessage().equalsIgnoreCase(solution)&&CurrentEvent.getUser().getNick().equalsIgnoreCase(player)){
                     event.getBot().sendIRC().message(event.getChannel().getName(), player + " defused the bomb. Seems like he was wise enough to buy a defuse kit." );
                     colours.clear();
                     queue.close();
                 }
-                else if (!CurrentEvent.getMessage().equalsIgnoreCase(solution)&&CurrentEvent.getUser().getNick().equals(player)) {
+                else if (!CurrentEvent.getMessage().equalsIgnoreCase(solution)&&CurrentEvent.getUser().getNick().equalsIgnoreCase(player)) {
                     event.getBot().sendIRC().message(event.getChannel().getName(),"The bomb explodes in " + player + "'s hands. You lost your life.");
                     colours.clear();
                     queue.close();
