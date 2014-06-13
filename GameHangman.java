@@ -22,7 +22,7 @@ import org.pircbotx.hooks.events.MessageEvent;
  * @author Stephen
  * Based on the C# IRC bot, CasinoBot
  * which is generally unstable and requires windows to run
- * 
+ *
  * Activate Command with:
  *      !hangman
  */
@@ -41,22 +41,23 @@ public class GameHangman extends ListenerAdapter {
     public void onMessage(MessageEvent event) throws FileNotFoundException, InterruptedException {
         {
             String message = Colors.removeFormattingAndColors(event.getMessage());
-            if (message.equalsIgnoreCase("!hangman")&&!event.getChannel().getName().equals(blockedChan)) {
+            String gameChan = event.getChannel().getName();
+            if (message.equalsIgnoreCase("!hangman")&&!gameChan.equals(blockedChan)) {
                 if (wordls == null) {
                     wordls = getWordList();
                 }
                 
                 if (activechan.isEmpty()){
-                    activechan.add(event.getChannel().getName());
+                    activechan.add(gameChan);
                 }
                 else{ //if its not empty, check if the channel calling the function is already active
                     for (int i=0;i<activechan.size();i++){
-                        if (activechan.get(i).equals(event.getChannel().getName())){
+                        if (activechan.get(i).equals(gameChan)){
                             isactive = true;
                         }
                     }
                     if (!isactive) { //if its not active, add it to the active channel list, and start the game
-                        activechan.add(event.getChannel().getName());
+                        activechan.add(gameChan);
                     }
                 }
                 if (!isactive){
@@ -65,64 +66,57 @@ public class GameHangman extends ListenerAdapter {
                     char[] characters = chosenword.toCharArray();
                     // Make a variable of all blanks to use
                     String guess = MakeBlank(chosenword);
-                    event.getBot().sendIRC().message(event.getChannel().getName(), "You have "+time+" seconds to find the following word: " + Colors.BOLD + guess + Colors.NORMAL);
-                    //        event.getBot().sendIRC().message(event.getChannel().getName(), "You have 1 minute to find the following word: " + Colors.BOLD + chosenword + Colors.NORMAL);
+                    event.getBot().sendIRC().message(gameChan, "You have "+time+" seconds to find the following word: " + Colors.BOLD + guess + Colors.NORMAL);
+                    //        event.getBot().sendIRC().message(gameChan, "You have 1 minute to find the following word: " + Colors.BOLD + chosenword + Colors.NORMAL);
                     DateTime dt = new DateTime();
                     DateTime end = dt.plusSeconds(time);
+                    boolean running = true;
                     WaitForQueue queue = new WaitForQueue(event.getBot());
-                    while (true){
+                    while (running){
                         MessageEvent CurrentEvent = queue.waitFor(MessageEvent.class);
+                        String currentChan = CurrentEvent.getChannel().getName();
                         dt = new DateTime();
                         changed = 0;
                         if (dt.isAfter(end)||lives==0){
                             event.respond("Game over! "+Colors.BOLD + chosenword + Colors.NORMAL + " would have been the solution.");
-                            activechan.remove(CurrentEvent.getChannel().getName());
-                            changed = 0;
-                            correct = 0;
-                            lives = baselives;
+                            running = false;
                             queue.close();
                         }
-                        else if (Pattern.matches("[a-zA-Z]{1}", CurrentEvent.getMessage())&&CurrentEvent.getChannel().getName().equalsIgnoreCase(event.getChannel().getName())){
+                        else if (Pattern.matches("[a-zA-Z]{1}", CurrentEvent.getMessage())&&currentChan.equalsIgnoreCase(gameChan)){
                             for (int i = 0; i<chosenword.length(); i++){
                                 if (Character.toString(characters[i]).equalsIgnoreCase(CurrentEvent.getMessage())){
                                     String temp = guess.substring(0,i)+CurrentEvent.getMessage()+guess.substring(i+1);
                                     guess = temp;
-                                    event.getBot().sendIRC().message(event.getChannel().getName(), CurrentEvent.getMessage() + " is correct! " + Colors.BOLD + guess.toUpperCase() + Colors.NORMAL + " Lives left: " +  lives );
+                                    event.getBot().sendIRC().message(gameChan, CurrentEvent.getMessage() + " is correct! " + Colors.BOLD + guess.toUpperCase() + Colors.NORMAL + " Lives left: " +  lives );
                                     correct++;
                                     changed = 1;
                                 }
                             }
                             if (changed ==0){
                                 lives--;
-                                event.getBot().sendIRC().message(event.getChannel().getName(), CurrentEvent.getMessage() + " is wrong or was already guessed. Lives left: " + lives );
+                                event.getBot().sendIRC().message(gameChan, CurrentEvent.getMessage() + " is wrong or was already guessed. Lives left: " + lives );
                                 if(lives == 0){
-                                    event.getBot().sendIRC().message(event.getChannel().getName(), "You've run out of lives! The word we looked for was " + Colors.BOLD + Colors.RED + chosenword.toUpperCase() + Colors.NORMAL);
-                                    correct = 0;
-                                    lives = baselives;
-                                    activechan.remove(CurrentEvent.getChannel().getName());
+                                    event.getBot().sendIRC().message(gameChan, "You've run out of lives! The word we looked for was " + Colors.BOLD + Colors.RED + chosenword.toUpperCase() + Colors.NORMAL);
+                                    running = false;
                                     queue.close();
                                 }
                             }
                             else if (correct == chosenword.length()){
-                                event.getBot().sendIRC().message(event.getChannel().getName(),"Congratulations " + CurrentEvent.getUser().getNick() +  ", you've found the word: " + Colors.BOLD + chosenword.toUpperCase() + Colors.NORMAL);
-                                correct = 0;
-                                lives = baselives;
-                                changed = 0;
-                                activechan.remove(CurrentEvent.getChannel().getName());
+                                event.getBot().sendIRC().message(gameChan,"Congratulations " + CurrentEvent.getUser().getNick() +  ", you've found the word: " + Colors.BOLD + chosenword.toUpperCase() + Colors.NORMAL);
+                                running = false;
                                 queue.close();
                             }
-                            //    else
-                            //  }
                         }
-                        else if ((CurrentEvent.getMessage().equals("!fuckthis")||(CurrentEvent.getMessage().equalsIgnoreCase("I give up")))&&CurrentEvent.getChannel().getName().equals(event.getChannel().getName())){
+                        else if ((CurrentEvent.getMessage().equals("!fuckthis")||(CurrentEvent.getMessage().equalsIgnoreCase("I give up")))&&currentChan.equals(gameChan)){
                             event.respond("You have given up! Correct answer was " + chosenword.toUpperCase());
-                            correct = 0;
-                            changed = 0;
-                            lives = baselives;
-                            activechan.remove(CurrentEvent.getChannel().getName());
+                            running = false;
                             queue.close();
                         }
                     }
+                    correct = 0;
+                    changed = 0;
+                    lives = baselives;
+                    activechan.remove(gameChan);
                 }
                 else
                     isactive=false;

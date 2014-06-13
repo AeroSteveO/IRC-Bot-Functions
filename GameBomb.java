@@ -35,11 +35,11 @@ public class GameBomb extends ListenerAdapter {
     @Override
     public void onMessage(MessageEvent event) throws FileNotFoundException, InterruptedException {
         String message = Colors.removeFormattingAndColors(event.getMessage());
-        
+        String gameChan = event.getChannel().getName();
         if (colorls == null) {
             colorls = getColorList();
         }
-        if (message.equalsIgnoreCase("!bomb")&&!event.getChannel().getName().equals(blockedChan)){
+        if (message.equalsIgnoreCase("!bomb")&&!gameChan.equals(blockedChan)){
             String player = event.getUser().getNick();
             List<String> colours = new ArrayList<>();
             String colorlist = "";
@@ -55,29 +55,31 @@ public class GameBomb extends ListenerAdapter {
 //            }
             DateTime dt = new DateTime();
             DateTime end = dt.plusSeconds(time);
+            boolean running = true;
             String solution = colours.get((int) (Math.random()*colours.size()-1));
             event.respond("You recieved the bomb. You have " + time + " seconds to defuse it by cutting the right cable." + Colors.BOLD + " Choose your destiny:" + Colors.NORMAL);
-            event.getBot().sendIRC().message(event.getChannel().getName(),"Wire colors include: " + colorlist);
+            event.getBot().sendIRC().message(gameChan,"Wire colors include: " + colorlist);
             WaitForQueue queue = new WaitForQueue(event.getBot());
-            while (true){
+            while (running){
                 MessageEvent CurrentEvent = queue.waitFor(MessageEvent.class);
                 dt = new DateTime();
                 if (dt.isAfter(end)){
-                    event.getBot().sendIRC().message(event.getChannel().getName(),"the bomb explodes in front of " + player + ". Seems like you did not even notice the big beeping suitcase.");
-                    colours.clear();
+                    event.getBot().sendIRC().message(gameChan,"the bomb explodes in front of " + player + ". Seems like you did not even notice the big beeping suitcase.");
+                    running = false;
                     queue.close();
                 }
                 else if (CurrentEvent.getMessage().equalsIgnoreCase(solution)&&CurrentEvent.getUser().getNick().equalsIgnoreCase(player)){
-                    event.getBot().sendIRC().message(event.getChannel().getName(), player + " defused the bomb. Seems like he was wise enough to buy a defuse kit." );
-                    colours.clear();
+                    event.getBot().sendIRC().message(gameChan, player + " defused the bomb. Seems like he was wise enough to buy a defuse kit." );
+                    running = false;
                     queue.close();
                 }
                 else if (!CurrentEvent.getMessage().equalsIgnoreCase(solution)&&CurrentEvent.getUser().getNick().equalsIgnoreCase(player)) {
-                    event.getBot().sendIRC().message(event.getChannel().getName(),"The bomb explodes in " + player + "'s hands. You lost your life.");
-                    colours.clear();
+                    event.getBot().sendIRC().message(gameChan,"The bomb explodes in " + player + "'s hands. You lost your life.");
+                    running = false;
                     queue.close();
                 }
             }
+            colours.clear();
         }
     }
     public ArrayList<String> getColorList() throws FileNotFoundException{

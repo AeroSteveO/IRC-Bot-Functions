@@ -11,8 +11,6 @@ import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.joda.time.DateTime;
 import org.pircbotx.Colors;
 import org.pircbotx.hooks.ListenerAdapter;
@@ -38,59 +36,63 @@ public class GameAltReverse extends ListenerAdapter {
     @Override
     public void onMessage(MessageEvent event) throws FileNotFoundException{
         String message = Colors.removeFormattingAndColors(event.getMessage());
+        String gameChan = event.getChannel().getName();
         // keep the spammy spammy out of main, could move to XML/Global.java at some point
-        if ((message.equalsIgnoreCase("!altreverse")||message.equalsIgnoreCase("esrever!"))&&!event.getChannel().getName().equals(blockedChan)) {
+        if ((message.equalsIgnoreCase("!altreverse")||message.equalsIgnoreCase("esrever!"))&&!gameChan.equals(blockedChan)) {
             // get the list of words only if theres nothing in the list alread
             if (wordls == null) {
                 wordls = getWordList();
             }
             // check if the current active channel list is empty
             if (activechan.isEmpty()){
-                activechan.add(event.getChannel().getName());
+                activechan.add(gameChan);
             }
             else{ //if its not empty, check if the channel calling the function is already active
                 for (int i=0;i<activechan.size();i++){
-                    if (activechan.get(i).equals(event.getChannel().getName())){
+                    if (activechan.get(i).equals(gameChan)){
                         isactive = true;
                     }
                 }
                 if (!isactive) { //if its not active, add it to the active channel list, and start the game
-                    activechan.add(event.getChannel().getName());
+                    activechan.add(gameChan);
                 }
             }
             if (!isactive){
                 //get and shuffle the word
                 String chosenword = wordls.get((int) (Math.random()*wordls.size()-1));
                 String reversed = reverse(chosenword);
-                event.getBot().sendIRC().message(event.getChannel().getName(), "You have "+time+" seconds to reverse this: " + Colors.BOLD+Colors.RED +chosenword.toUpperCase() + Colors.NORMAL);
+                event.getBot().sendIRC().message(gameChan, "You have "+time+" seconds to reverse this: " + Colors.BOLD+Colors.RED +chosenword.toUpperCase() + Colors.NORMAL);
                 //setup amount of given time
                 DateTime dt = new DateTime();
+                boolean running = true;
                 DateTime end = dt.plusSeconds(time);
                 WaitForQueue queue = new WaitForQueue(event.getBot());
-                while (true){  //magical BS timer built into a waitforqueue, only updates upon message event
+                while (running){  //magical BS timer built into a waitforqueue, only updates upon message event
                     try {
                         MessageEvent CurrentEvent = queue.waitFor(MessageEvent.class);
+                        String currentChan = CurrentEvent.getChannel().getName();
                         dt = new DateTime();
                         if (dt.isAfter(end)){
-                            event.getBot().sendIRC().message(CurrentEvent.getChannel().getName(),"You did not guess the solution in time, the correct answer would have been "+reversed.toUpperCase());
-                            activechan.remove(CurrentEvent.getChannel().getName());
+                            event.getBot().sendIRC().message(currentChan,"You did not guess the solution in time, the correct answer would have been "+reversed.toUpperCase());
+                            running = false;
                             queue.close();
                         }
-                        else if (CurrentEvent.getMessage().equalsIgnoreCase(reversed)&&CurrentEvent.getChannel().getName().equalsIgnoreCase(event.getChannel().getName())){
-                            event.getBot().sendIRC().message(event.getChannel().getName(), CurrentEvent.getUser().getNick() + ": You have entered the solution! Correct answer was " + reversed.toUpperCase());
-                            activechan.remove(CurrentEvent.getChannel().getName());
+                        else if (CurrentEvent.getMessage().equalsIgnoreCase(reversed)&&currentChan.equalsIgnoreCase(gameChan)){
+                            event.getBot().sendIRC().message(gameChan, CurrentEvent.getUser().getNick() + ": You have entered the solution! Correct answer was " + reversed.toUpperCase());
+                            running = false;
                             queue.close();
                         }
-                        else if ((CurrentEvent.getMessage().equalsIgnoreCase("!fuckthis")||(CurrentEvent.getMessage().equalsIgnoreCase("I give up")))&&CurrentEvent.getChannel().getName().equals(event.getChannel().getName())){
-                            event.getBot().sendIRC().message(event.getChannel().getName(), CurrentEvent.getUser().getNick() + ": You have given up! Correct answer was " + reversed.toUpperCase());
-                            activechan.remove(CurrentEvent.getChannel().getName());
+                        else if ((CurrentEvent.getMessage().equalsIgnoreCase("!fuckthis")||(CurrentEvent.getMessage().equalsIgnoreCase("I give up")))&&currentChan.equals(gameChan)){
+                            event.getBot().sendIRC().message(gameChan, CurrentEvent.getUser().getNick() + ": You have given up! Correct answer was " + reversed.toUpperCase());
+                            running = false;
                             queue.close();
                         }
                     } catch (InterruptedException ex) {
-                        //      activechan.remove(CurrentEvent.getChannel().getName());
-                        Logger.getLogger(GameOmgword.class.getName()).log(Level.SEVERE, null, ex);
+                        //      activechan.remove(currentChan);
+                        ex.printStackTrace();
                     }
                 }
+                activechan.remove(gameChan);
             }
             else
                 isactive=false;
@@ -106,7 +108,7 @@ public class GameAltReverse extends ListenerAdapter {
             wordfile.close();
             return (wordls);
         } catch (FileNotFoundException ex) {
-            Logger.getLogger(GameOmgword.class.getName()).log(Level.SEVERE, null, ex);
+            ex.printStackTrace();
             return null;
         }
     }
@@ -117,7 +119,6 @@ public class GameAltReverse extends ListenerAdapter {
         }
         StringBuilder output = new StringBuilder(input.length());
         for(int i=characters.size();i>0;i--){
-            //int randPicker = (int)(Math.random()*characters.size());
             output.append(characters.get(i-1));
         }
         return(output.toString());
