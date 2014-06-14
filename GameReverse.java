@@ -11,8 +11,10 @@ import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
-import org.joda.time.DateTime;
+import org.pircbotx.Channel;
 import org.pircbotx.Colors;
+import org.pircbotx.PircBotX;
+import org.pircbotx.User;
 import org.pircbotx.hooks.ListenerAdapter;
 import org.pircbotx.hooks.WaitForQueue;
 import org.pircbotx.hooks.events.MessageEvent;
@@ -22,10 +24,10 @@ import org.pircbotx.hooks.events.MessageEvent;
  * @author Steve-O
  * Based on the C# IRC bot, CasinoBot
  * which is really unstable and breaks all the time
- * 
+ *
  * Activate Command with:
  *      !reverse
- * 
+ *
  */
 public class GameReverse extends ListenerAdapter {
     static ArrayList<String> wordls = null;
@@ -34,7 +36,7 @@ public class GameReverse extends ListenerAdapter {
     int time = 20;
     String blockedChan = "#dtella";
     @Override
-    public void onMessage(MessageEvent event) throws FileNotFoundException{
+    public void onMessage(MessageEvent event) throws FileNotFoundException, InterruptedException{
         String message = Colors.removeFormattingAndColors(event.getMessage());
         String gameChan = event.getChannel().getName();
         // keep the spammy spammy out of main, could move to XML/Global.java at some point
@@ -61,31 +63,30 @@ public class GameReverse extends ListenerAdapter {
                 //get and shuffle the word
                 String chosenword = wordls.get((int) (Math.random()*wordls.size()-1));
                 String reversed = reverse(chosenword);
-                event.getBot().sendIRC().message(gameChan, "You have 30 seconds to reverse this: " + Colors.BOLD+Colors.RED +reversed.toUpperCase() + Colors.NORMAL);
+                event.getBot().sendIRC().message(gameChan, "You have "+time+" seconds to reverse this: " + Colors.BOLD+Colors.RED +reversed.toUpperCase() + Colors.NORMAL);
                 //setup amount of given time
                 boolean running = true;
-                DateTime dt = new DateTime();
-                DateTime end = dt.plusSeconds(time);
-                WaitForQueue queue = new WaitForQueue(event.getBot());
+                int key=(int) (Math.random()*100000+1);
+                TimedWaitForQueue timedQueue = new TimedWaitForQueue(Global.bot,time,event.getChannel(),event.getUser(),key);
+                
                 while (running){  //magical BS timer built into a waitforqueue, only updates upon message event
                     try {
-                        MessageEvent CurrentEvent = queue.waitFor(MessageEvent.class);
+                        MessageEvent CurrentEvent = timedQueue.waitFor(MessageEvent.class);
                         String currentChan = CurrentEvent.getChannel().getName();
-                        dt = new DateTime();
-                        if (dt.isAfter(end)){
+                        if (CurrentEvent.getMessage().equalsIgnoreCase(Integer.toString(key))){
                             event.getBot().sendIRC().message(currentChan,"You did not guess the solution in time, the correct answer would have been "+chosenword.toUpperCase());
                             running = false;
-                            queue.close();
+                            timedQueue.close();
                         }
                         else if (CurrentEvent.getMessage().equalsIgnoreCase(chosenword)&&currentChan.equalsIgnoreCase(gameChan)){
                             event.getBot().sendIRC().message(gameChan, CurrentEvent.getUser().getNick() + ": You have entered the solution! Correct answer was " + chosenword.toUpperCase());
                             running = false;
-                            queue.close();
+                            timedQueue.close();
                         }
                         else if ((CurrentEvent.getMessage().equalsIgnoreCase("!fuckthis")||(CurrentEvent.getMessage().equalsIgnoreCase("I give up")))&&currentChan.equals(gameChan)){
                             event.getBot().sendIRC().message(gameChan, CurrentEvent.getUser().getNick() + ": You have given up! Correct answer was " + chosenword.toUpperCase());
                             running = false;
-                            queue.close();
+                            timedQueue.close();
                         }
                     } catch (InterruptedException ex) {
                         //      activechan.remove(CurrentEvent.getChannel().getName());
@@ -112,7 +113,7 @@ public class GameReverse extends ListenerAdapter {
             return null;
         }
     }
-       public static String reverse(String input){
+    public static String reverse(String input){
         List<Character> characters = new ArrayList<Character>();
         for(char c:input.toCharArray()){
             characters.add(c);
@@ -122,5 +123,14 @@ public class GameReverse extends ListenerAdapter {
             output.append(characters.get(i-1));
         }
         return(output.toString());
+    }
+    public class TimedWaitForQueue extends WaitForQueue{
+        int time;
+        public TimedWaitForQueue(PircBotX bot,int time, Channel chan,User user, int key) throws InterruptedException {
+            super(bot);
+            this.time=time;
+            Thread.sleep(this.time*1000);
+            bot.getConfiguration().getListenerManager().dispatchEvent(new MessageEvent(Global.bot,chan,user,Integer.toString(key)));
+        }
     }
 }

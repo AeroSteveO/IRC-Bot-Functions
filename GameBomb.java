@@ -12,7 +12,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 import org.joda.time.DateTime;
+import org.pircbotx.Channel;
 import org.pircbotx.Colors;
+import org.pircbotx.PircBotX;
+import org.pircbotx.User;
 import org.pircbotx.hooks.ListenerAdapter;
 import org.pircbotx.hooks.WaitForQueue;
 import org.pircbotx.hooks.events.MessageEvent;
@@ -22,7 +25,7 @@ import org.pircbotx.hooks.events.MessageEvent;
  * @author Steve-O
  * Based on the C# IRC bot, CasinoBot
  * which is generally unstable and requires windows to run
- * 
+ *
  * Activate Command with:
  *      !bomb
  */
@@ -46,37 +49,34 @@ public class GameBomb extends ListenerAdapter {
             for (int i=0;i<5;i++){
                 colours.add(colorls.get((int) (Math.random()*colorls.size()-1)).toLowerCase());
             }
-            
-//            if (colorlist.equals("")){
             for (int i=0; i<colours.size()-1;i++){
                 colorlist = colorlist + colours.get(i) + ", ";
             }
+            
             colorlist = colorlist + colours.get(colours.size()-1);
-//            }
-            DateTime dt = new DateTime();
-            DateTime end = dt.plusSeconds(time);
             boolean running = true;
             String solution = colours.get((int) (Math.random()*colours.size()-1));
             event.respond("You recieved the bomb. You have " + time + " seconds to defuse it by cutting the right cable." + Colors.BOLD + " Choose your destiny:" + Colors.NORMAL);
             event.getBot().sendIRC().message(gameChan,"Wire colors include: " + colorlist);
-            WaitForQueue queue = new WaitForQueue(event.getBot());
+            int key=(int) (Math.random()*100000+1);
+            TimedWaitForQueue timedQueue = new TimedWaitForQueue(Global.bot,time,event.getChannel(),event.getUser(),key);
             while (running){
-                MessageEvent CurrentEvent = queue.waitFor(MessageEvent.class);
-                dt = new DateTime();
-                if (dt.isAfter(end)){
+                MessageEvent CurrentEvent = timedQueue.waitFor(MessageEvent.class);
+                
+                if (CurrentEvent.getMessage().equalsIgnoreCase(Integer.toString(key))){
                     event.getBot().sendIRC().message(gameChan,"the bomb explodes in front of " + player + ". Seems like you did not even notice the big beeping suitcase.");
                     running = false;
-                    queue.close();
+                    timedQueue.close();
                 }
                 else if (CurrentEvent.getMessage().equalsIgnoreCase(solution)&&CurrentEvent.getUser().getNick().equalsIgnoreCase(player)){
                     event.getBot().sendIRC().message(gameChan, player + " defused the bomb. Seems like he was wise enough to buy a defuse kit." );
                     running = false;
-                    queue.close();
+                    timedQueue.close();
                 }
                 else if (!CurrentEvent.getMessage().equalsIgnoreCase(solution)&&CurrentEvent.getUser().getNick().equalsIgnoreCase(player)) {
                     event.getBot().sendIRC().message(gameChan,"The bomb explodes in " + player + "'s hands. You lost your life.");
                     running = false;
-                    queue.close();
+                    timedQueue.close();
                 }
             }
             colours.clear();
@@ -94,6 +94,15 @@ public class GameBomb extends ListenerAdapter {
         } catch (FileNotFoundException ex) {
             ex.printStackTrace();
             return null;
+        }
+    }
+    public class TimedWaitForQueue extends WaitForQueue{
+        int time;
+        public TimedWaitForQueue(PircBotX bot,int time, Channel chan,User user, int key) throws InterruptedException {
+            super(bot);
+            this.time=time;
+            Thread.sleep(this.time*1000);
+            bot.getConfiguration().getListenerManager().dispatchEvent(new MessageEvent(Global.bot,chan,user,Integer.toString(key)));
         }
     }
 }

@@ -11,8 +11,10 @@ import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.regex.Pattern;
-import org.joda.time.DateTime;
+import org.pircbotx.Channel;
 import org.pircbotx.Colors;
+import org.pircbotx.PircBotX;
+import org.pircbotx.User;
 import org.pircbotx.hooks.ListenerAdapter;
 import org.pircbotx.hooks.WaitForQueue;
 import org.pircbotx.hooks.events.MessageEvent;
@@ -67,20 +69,17 @@ public class GameHangman extends ListenerAdapter {
                     // Make a variable of all blanks to use
                     String guess = MakeBlank(chosenword);
                     event.getBot().sendIRC().message(gameChan, "You have "+time+" seconds to find the following word: " + Colors.BOLD + guess + Colors.NORMAL);
-                    //        event.getBot().sendIRC().message(gameChan, "You have 1 minute to find the following word: " + Colors.BOLD + chosenword + Colors.NORMAL);
-                    DateTime dt = new DateTime();
-                    DateTime end = dt.plusSeconds(time);
                     boolean running = true;
-                    WaitForQueue queue = new WaitForQueue(event.getBot());
+                    int key=(int) (Math.random()*100000+1);
+                    TimedWaitForQueue timedQueue = new TimedWaitForQueue(Global.bot,time,event.getChannel(),event.getUser(),key);
                     while (running){
-                        MessageEvent CurrentEvent = queue.waitFor(MessageEvent.class);
+                        MessageEvent CurrentEvent = timedQueue.waitFor(MessageEvent.class);
                         String currentChan = CurrentEvent.getChannel().getName();
-                        dt = new DateTime();
                         changed = 0;
-                        if (dt.isAfter(end)||lives==0){
-                            event.respond("Game over! "+Colors.BOLD + chosenword + Colors.NORMAL + " would have been the solution.");
+                        if (CurrentEvent.getMessage().equalsIgnoreCase(Integer.toString(key))){
+                            event.getBot().sendIRC().message(gameChan,"Game over! "+Colors.BOLD + chosenword.toUpperCase() + Colors.NORMAL + " would have been the solution.");
                             running = false;
-                            queue.close();
+                            timedQueue.close();
                         }
                         else if (Pattern.matches("[a-zA-Z]{1}", CurrentEvent.getMessage())&&currentChan.equalsIgnoreCase(gameChan)){
                             for (int i = 0; i<chosenword.length(); i++){
@@ -98,19 +97,19 @@ public class GameHangman extends ListenerAdapter {
                                 if(lives == 0){
                                     event.getBot().sendIRC().message(gameChan, "You've run out of lives! The word we looked for was " + Colors.BOLD + Colors.RED + chosenword.toUpperCase() + Colors.NORMAL);
                                     running = false;
-                                    queue.close();
+                                    timedQueue.close();
                                 }
                             }
                             else if (correct == chosenword.length()){
                                 event.getBot().sendIRC().message(gameChan,"Congratulations " + CurrentEvent.getUser().getNick() +  ", you've found the word: " + Colors.BOLD + chosenword.toUpperCase() + Colors.NORMAL);
                                 running = false;
-                                queue.close();
+                                timedQueue.close();
                             }
                         }
                         else if ((CurrentEvent.getMessage().equals("!fuckthis")||(CurrentEvent.getMessage().equalsIgnoreCase("I give up")))&&currentChan.equals(gameChan)){
                             event.respond("You have given up! Correct answer was " + chosenword.toUpperCase());
                             running = false;
-                            queue.close();
+                            timedQueue.close();
                         }
                     }
                     correct = 0;
@@ -143,6 +142,15 @@ public class GameHangman extends ListenerAdapter {
         } catch (FileNotFoundException ex) {
             ex.printStackTrace();
             return null;
+        }
+    }
+        public class TimedWaitForQueue extends WaitForQueue{
+        int time;
+        public TimedWaitForQueue(PircBotX bot,int time, Channel chan,User user, int key) throws InterruptedException {
+            super(bot);
+            this.time=time;
+            Thread.sleep(this.time*1000);
+            bot.getConfiguration().getListenerManager().dispatchEvent(new MessageEvent(Global.bot,chan,user,Integer.toString(key)));
         }
     }
 }

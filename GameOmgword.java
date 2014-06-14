@@ -10,8 +10,10 @@ import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
-import org.joda.time.*;
+import org.pircbotx.Channel;
 import org.pircbotx.Colors;
+import org.pircbotx.PircBotX;
+import org.pircbotx.User;
 import org.pircbotx.hooks.*;
 import org.pircbotx.hooks.events.*;
 
@@ -20,7 +22,7 @@ import org.pircbotx.hooks.events.*;
  * @author Steve-O
  * Based on the C# IRC bot, CasinoBot
  * which is really unstable and breaks all the time
- * 
+ *
  * Activate command with:
  *      !omgword
  *
@@ -33,7 +35,7 @@ public class GameOmgword extends ListenerAdapter {
     String blockedChan = "#dtella";
     int time = 30;
     @Override
-    public void onMessage(MessageEvent event) throws FileNotFoundException{
+    public void onMessage(MessageEvent event) throws FileNotFoundException, InterruptedException{
         String message = Colors.removeFormattingAndColors(event.getMessage());
         String gameChan = event.getChannel().getName();
         // keep the spammy spammy out of main, could move to XML/Global.java at some point
@@ -63,28 +65,27 @@ public class GameOmgword extends ListenerAdapter {
                 boolean running = true;
                 event.getBot().sendIRC().message(gameChan, "You have "+time+" seconds to solve this: " + Colors.BOLD+Colors.RED +scrambled.toUpperCase() + Colors.NORMAL);
                 //setup amount of given time
-                DateTime dt = new DateTime();
-                DateTime end = dt.plusSeconds(time);
-                WaitForQueue queue = new WaitForQueue(event.getBot());
+                int key=(int) (Math.random()*100000+1);
+                TimedWaitForQueue timedQueue = new TimedWaitForQueue(Global.bot,time,event.getChannel(),event.getUser(),key);
                 while (running){  //magical BS timer built into a waitforqueue, only updates upon message event
                     try {
-                        MessageEvent CurrentEvent = queue.waitFor(MessageEvent.class);
+                        MessageEvent CurrentEvent = timedQueue.waitFor(MessageEvent.class);
                         String currentChan = CurrentEvent.getChannel().getName();
-                        dt = new DateTime();
-                        if (dt.isAfter(end)){
+                        
+                        if (CurrentEvent.getMessage().equalsIgnoreCase(Integer.toString(key))){
                             event.getBot().sendIRC().message(currentChan,"You did not guess the solution in time, the correct answer would have been "+chosenword.toUpperCase());
                             running = false;
-                            queue.close();
+                            timedQueue.close();
                         }
                         else if (CurrentEvent.getMessage().equalsIgnoreCase(chosenword)&&currentChan.equalsIgnoreCase(gameChan)){
                             event.getBot().sendIRC().message(gameChan, CurrentEvent.getUser().getNick() + ": You have entered the solution! Correct answer was " + chosenword.toUpperCase());
                             running = false;
-                            queue.close();
+                            timedQueue.close();
                         }
                         else if ((CurrentEvent.getMessage().equalsIgnoreCase("!fuckthis")||(CurrentEvent.getMessage().equalsIgnoreCase("I give up")))&&currentChan.equals(gameChan)){
                             event.getBot().sendIRC().message(gameChan, CurrentEvent.getUser().getNick() + ": You have given up! Correct answer was " + chosenword.toUpperCase());
                             running = false;
-                            queue.close();
+                            timedQueue.close();
                         }
                     } catch (InterruptedException ex) {
                         //      activechan.remove(currentChan);
@@ -125,6 +126,15 @@ public class GameOmgword extends ListenerAdapter {
         } catch (FileNotFoundException ex) {
             ex.printStackTrace();
             return null;
+        }
+    }
+    public class TimedWaitForQueue extends WaitForQueue{
+        int time;
+        public TimedWaitForQueue(PircBotX bot,int time, Channel chan,User user, int key) throws InterruptedException {
+            super(bot);
+            this.time=time;
+            Thread.sleep(this.time*1000);
+            bot.getConfiguration().getListenerManager().dispatchEvent(new MessageEvent(Global.bot,chan,user,Integer.toString(key)));
         }
     }
 }
