@@ -79,7 +79,7 @@ public class GameHangman extends ListenerAdapter {
                         if (CurrentEvent.getMessage().equalsIgnoreCase(Integer.toString(key))){
                             event.getBot().sendIRC().message(gameChan,"Game over! "+Colors.BOLD + chosenword.toUpperCase() + Colors.NORMAL + " would have been the solution.");
                             running = false;
-                            timedQueue.close();
+                            timedQueue.end();
                         }
                         else if (Pattern.matches("[a-zA-Z]{1}", CurrentEvent.getMessage())&&currentChan.equalsIgnoreCase(gameChan)){
                             for (int i = 0; i<chosenword.length(); i++){
@@ -97,13 +97,13 @@ public class GameHangman extends ListenerAdapter {
                                 if(lives == 0){
                                     event.getBot().sendIRC().message(gameChan, "You've run out of lives! The word we looked for was " + Colors.BOLD + Colors.RED + chosenword.toUpperCase() + Colors.NORMAL);
                                     running = false;
-                                    timedQueue.close();
+                                    timedQueue.end();
                                 }
                             }
                             else if (correct == chosenword.length()){
                                 event.getBot().sendIRC().message(gameChan,"Congratulations " + CurrentEvent.getUser().getNick() +  ", you've found the word: " + Colors.BOLD + chosenword.toUpperCase() + Colors.NORMAL);
                                 running = false;
-                                timedQueue.close();
+                                timedQueue.end();
                             }
                         }
                         else if ((CurrentEvent.getMessage().equals("!fuckthis")||(CurrentEvent.getMessage().equalsIgnoreCase("I give up")))&&currentChan.equals(gameChan)){
@@ -144,13 +144,52 @@ public class GameHangman extends ListenerAdapter {
             return null;
         }
     }
-        public class TimedWaitForQueue extends WaitForQueue{
+    public class TimedWaitForQueue extends WaitForQueue{
         int time;
+        private QueueTime runnable = null;
+        Thread t;
         public TimedWaitForQueue(PircBotX bot,int time, Channel chan,User user, int key) throws InterruptedException {
             super(bot);
             this.time=time;
-            Thread.sleep(this.time*1000);
-            bot.getConfiguration().getListenerManager().dispatchEvent(new MessageEvent(Global.bot,chan,user,Integer.toString(key)));
+            QueueTime runnable = new QueueTime(Global.bot,time,chan,user,key);
+            this.t = new Thread(runnable);
+            runnable.giveT(t);
+            t.start();
+//            Thread.sleep(this.time*1000);
+//            bot.getConfiguration().getListenerManager().dispatchEvent(new MessageEvent(Global.bot,chan,user,Integer.toString(key)));
+        }
+        public void end() throws InterruptedException{
+            this.close();
+            t.join(1000);
+        }
+    }
+    public class QueueTime implements Runnable {
+        int time;
+        User user;
+        Channel chan;
+        int key;
+        PircBotX bot;
+        Thread t;
+        QueueTime(PircBotX bot, int time, Channel chan, User user, int key) {
+            this.time = time;
+            this.chan=chan;
+            this.user=user;
+            this.key=key;
+            this.bot=bot;
+        }
+        
+        public void giveT(Thread t) {
+            this.t = t;
+        }
+
+        @Override
+        public void run() {
+            try {
+                Thread.sleep(time*1000);
+                bot.getConfiguration().getListenerManager().dispatchEvent(new MessageEvent(Global.bot,chan,user,Integer.toString(key)));
+            } catch (InterruptedException ex) {
+                ex.printStackTrace();
+            }
         }
     }
 }

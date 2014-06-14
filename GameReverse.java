@@ -76,17 +76,17 @@ public class GameReverse extends ListenerAdapter {
                         if (CurrentEvent.getMessage().equalsIgnoreCase(Integer.toString(key))){
                             event.getBot().sendIRC().message(currentChan,"You did not guess the solution in time, the correct answer would have been "+chosenword.toUpperCase());
                             running = false;
-                            timedQueue.close();
+                            timedQueue.end();
                         }
                         else if (CurrentEvent.getMessage().equalsIgnoreCase(chosenword)&&currentChan.equalsIgnoreCase(gameChan)){
                             event.getBot().sendIRC().message(gameChan, CurrentEvent.getUser().getNick() + ": You have entered the solution! Correct answer was " + chosenword.toUpperCase());
                             running = false;
-                            timedQueue.close();
+                            timedQueue.end();
                         }
                         else if ((CurrentEvent.getMessage().equalsIgnoreCase("!fuckthis")||(CurrentEvent.getMessage().equalsIgnoreCase("I give up")))&&currentChan.equals(gameChan)){
                             event.getBot().sendIRC().message(gameChan, CurrentEvent.getUser().getNick() + ": You have given up! Correct answer was " + chosenword.toUpperCase());
                             running = false;
-                            timedQueue.close();
+                            timedQueue.end();
                         }
                     } catch (InterruptedException ex) {
                         //      activechan.remove(CurrentEvent.getChannel().getName());
@@ -126,11 +126,49 @@ public class GameReverse extends ListenerAdapter {
     }
     public class TimedWaitForQueue extends WaitForQueue{
         int time;
+        Thread t;
         public TimedWaitForQueue(PircBotX bot,int time, Channel chan,User user, int key) throws InterruptedException {
             super(bot);
             this.time=time;
-            Thread.sleep(this.time*1000);
-            bot.getConfiguration().getListenerManager().dispatchEvent(new MessageEvent(Global.bot,chan,user,Integer.toString(key)));
+            QueueTime runnable = new QueueTime(Global.bot,time,chan,user,key);
+            this.t = new Thread(runnable);
+            runnable.giveT(t);
+            t.start();
+//            Thread.sleep(this.time*1000);
+//            bot.getConfiguration().getListenerManager().dispatchEvent(new MessageEvent(Global.bot,chan,user,Integer.toString(key)));
+        }
+        public void end() throws InterruptedException{
+            this.close();
+            t.join(1000);
+        }
+    }
+    public class QueueTime implements Runnable {
+        int time;
+        User user;
+        Channel chan;
+        int key;
+        PircBotX bot;
+        Thread t;
+        QueueTime(PircBotX bot, int time, Channel chan, User user, int key) {
+            this.time = time;
+            this.chan=chan;
+            this.user=user;
+            this.key=key;
+            this.bot=bot;
+        }
+        
+        public void giveT(Thread t) {
+            this.t = t;
+        }
+        
+        @Override
+        public void run() {
+            try {
+                Thread.sleep(time*1000);
+                bot.getConfiguration().getListenerManager().dispatchEvent(new MessageEvent(Global.bot,chan,user,Integer.toString(key)));
+            } catch (InterruptedException ex) {
+                ex.printStackTrace();
+            }
         }
     }
 }
