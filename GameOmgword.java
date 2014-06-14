@@ -138,8 +138,6 @@ public class GameOmgword extends ListenerAdapter {
             this.t = new Thread(runnable);
             runnable.giveT(t);
             t.start();
-//            Thread.sleep(this.time*1000);
-//            bot.getConfiguration().getListenerManager().dispatchEvent(new MessageEvent(Global.bot,chan,user,Integer.toString(key)));
         }
         public void end() throws InterruptedException{
             this.close();
