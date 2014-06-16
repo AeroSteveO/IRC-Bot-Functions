@@ -39,15 +39,15 @@ import org.pircbotx.hooks.events.MessageEvent;
 public class Logger extends ListenerAdapter{
     ArrayList<String> log = new ArrayList<>();
     Boolean success = false;
-    
+    String BotOwner = "nick";
     public void onMessage(MessageEvent event) throws IOException {
         String message = Colors.removeFormattingAndColors(event.getMessage());
         log.add("<"+event.getUser().getNick()+"> "+message);
 //        System.out.printf(log.get(log.size()-1)+"\n");
-        if(log.size()>100||(message.equalsIgnoreCase("!save logs")&&event.getUser().getNick().equalsIgnoreCase(Global.BotOwner))){
+        if(log.size()>100||(message.equalsIgnoreCase("!save logs")&&event.getUser().getNick().equalsIgnoreCase(BotOwner))){
             success = saveToFile(log);
             if(!success)
-                event.getBot().sendIRC().notice(Global.BotOwner,"Log file failed to save");
+                event.getBot().sendIRC().notice(BotOwner,"Log file failed to save");
             log.clear();
         }
     }
