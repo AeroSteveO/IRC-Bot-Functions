@@ -67,7 +67,6 @@ public class GameHangman extends ListenerAdapter {
                     String chosenword = wordls.get((int) (Math.random()*wordls.size()-1));
                     String guess = MakeBlank(chosenword);
                     char[] characters = chosenword.toCharArray();
-                    char[] blanks = guess.toCharArray();
                     event.getBot().sendIRC().message(gameChan, "You have "+time+" seconds to find the following word: " + Colors.BOLD + guess + Colors.NORMAL);
                     boolean running = true;
                     int key=(int) (Math.random()*100000+1);
@@ -94,7 +93,7 @@ public class GameHangman extends ListenerAdapter {
                         }
                         else if (Pattern.matches("[a-zA-Z]{1}", CurrentEvent.getMessage())&&currentChan.equalsIgnoreCase(gameChan)){
                             for (int i = 0; i<chosenword.length(); i++){
-                                if (Character.toString(characters[i]).equalsIgnoreCase(CurrentEvent.getMessage())&&!Character.toString(blanks[i]).equalsIgnoreCase(CurrentEvent.getMessage())){
+                                if (Character.toString(characters[i]).equalsIgnoreCase(CurrentEvent.getMessage())&&!Character.toString(guess.charAt(i)).equalsIgnoreCase(CurrentEvent.getMessage())){
                                     String temp = guess.substring(0,i)+CurrentEvent.getMessage()+guess.substring(i+1);
                                     guess = temp;
                                     event.getBot().sendIRC().message(gameChan, CurrentEvent.getMessage() + " is correct! " + Colors.BOLD + guess.toUpperCase() + Colors.NORMAL + " Lives left: " +  lives );
@@ -122,7 +121,6 @@ public class GameHangman extends ListenerAdapter {
                             running = false;
                             timedQueue.close();
                         }
-                        blanks = guess.toCharArray();
                     }
                     correct = 0;
                     changed = 0;
