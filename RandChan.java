@@ -7,6 +7,7 @@
 package Wheatley;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.Date;
@@ -17,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.json.simple.parser.ContentHandler;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
@@ -26,14 +28,14 @@ import org.json.simple.parser.ParseException;
  * --created the json grabbing and parsing parts
  * Previous Bot: Poopsock by khwain
  * --created the russian roulette/throttling in the original randchan function
- * 
- * This function requires the json-simple-1.1.1 library and KeyFinder.java
+ *
+ * This function requires the json-simple-1.1.1 library
  * Besides the one specialty library, this is plug and play
- * 
+ *
  * Activate Commands with:
  *      !randchan [board]
  *          responds with a link to a random 4chan image in the given board,
- *          if no board is given, then it responds with a random image from a 
+ *          if no board is given, then it responds with a random image from a
  *          random board
  */
 public class RandChan extends ListenerAdapter {
@@ -166,5 +168,77 @@ public class RandChan extends ListenerAdapter {
             }
         }
         return(matchedJson);
+    }
+}
+class KeyFinder implements ContentHandler{
+    private Object value;
+    private boolean found = false;
+    private boolean end = false;
+    private String key;
+    private String matchKey;
+    
+    public void setMatchKey(String matchKey){
+        this.matchKey = matchKey;
+    }
+    
+    public Object getValue(){
+        return value;
+    }
+    
+    public boolean isEnd(){
+        return end;
+    }
+    
+    public void setFound(boolean found){
+        this.found = found;
+    }
+    
+    public boolean isFound(){
+        return found;
+    }
+    
+    public void startJSON() throws ParseException, IOException {
+        found = false;
+        end = false;
+    }
+    public void endJSON() throws ParseException, IOException {
+        end = true;
+    }
+    
+    public boolean primitive(Object value) throws ParseException, IOException {
+        if(key != null){
+            if(key.equals(matchKey)){
+                found = true;
+                this.value = value;
+                key = null;
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    public boolean startArray() throws ParseException, IOException {
+        return true;
+    }
+    
+    public boolean startObject() throws ParseException, IOException {
+        return true;
+    }
+    
+    public boolean startObjectEntry(String key) throws ParseException, IOException {
+        this.key = key;
+        return true;
+    }
+    
+    public boolean endArray() throws ParseException, IOException {
+        return false;
+    }
+    
+    public boolean endObject() throws ParseException, IOException {
+        return true;
+    }
+    
+    public boolean endObjectEntry() throws ParseException, IOException {
+        return true;
     }
 }
