@@ -8,25 +8,35 @@ package testbot;
 
 import org.pircbotx.Configuration;
 import org.pircbotx.PircBotX;
-import org.pircbotx.hooks.managers.BackgroundListenerManager;
-import org.pircbotx.Configuration;
-import org.pircbotx.PircBotX;
-import org.pircbotx.dcc.ReceiveChat;
 import org.pircbotx.Configuration.*;
-import org.pircbotx.hooks.*;
-import org.pircbotx.hooks.events.*;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.DocumentBuilder;
-import org.w3c.dom.Element;
-import java.io.File;
+import org.pircbotx.hooks.ListenerAdapter;
+import org.pircbotx.hooks.events.ConnectEvent;
+import org.pircbotx.hooks.events.KickEvent;
+import org.pircbotx.hooks.events.MessageEvent;
 import org.pircbotx.hooks.managers.BackgroundListenerManager;
 
 /**
  *
  * @author Stephen
  */
-public class TestBot {
+public class TestBot extends ListenerAdapter {
     
+    @Override
+    public void onMessage(final MessageEvent event) throws Exception {
+// in case something should be done here
+    }
+    @Override
+    // Rejoin on Kick
+    public void onKick(KickEvent event) throws Exception {
+        if (event.getRecipient().getNick().equals(event.getBot().getNick())) {
+            event.getBot().sendIRC().joinChannel(event.getChannel().getName());
+        }
+    }
+    @Override
+    // Set mode +B for Bots
+    public void onConnect(ConnectEvent event) throws Exception {
+        event.getBot().sendRaw().rawLine("mode " + event.getBot().getNick() + " +B");
+    }
     /**
      * @param args the command line arguments
      */
@@ -44,6 +54,7 @@ public class TestBot {
                 .setAutoReconnect(true)
                 .setMaxLineLength(425)
                 .setListenerManager(BackgroundListener)//Allow for logger background listener
+                .addListener(new TestBot())
                 .addListener(new Why())
                 .addListener(new Ignite())
                 .addListener(new Laser())
