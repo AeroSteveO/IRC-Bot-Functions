@@ -4,7 +4,7 @@
 * and open the template in the editor.
 */
 
-package Wheatley;
+package testbot;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -22,25 +22,25 @@ import org.pircbotx.hooks.events.MessageEvent;
 /**
  *
  * @author Steve-O
- * Based on the C# IRC bot, CasinoBot
- * which is really unstable and breaks all the time
+ *  Original Bot: WHEATLEY
+ *      a variant of the reverse function from CasinoBot, idea from Steve-O
  *
- * Activate Command with:
- *      !reverse
- *
+ *  Activate Command with:
+ *      !altreverse
+ *      esrever!
  */
-public class GameReverse extends ListenerAdapter {
+public class GameAltReverse extends ListenerAdapter {
     static ArrayList<String> wordls = null;
     static ArrayList<String> activechan = new ArrayList<String>();
     boolean isactive = false;
-    int time = 20;
     String blockedChan = "#dtella";
+    int time = 20;
     @Override
     public void onMessage(MessageEvent event) throws FileNotFoundException, InterruptedException{
         String message = Colors.removeFormattingAndColors(event.getMessage());
         String gameChan = event.getChannel().getName();
         // keep the spammy spammy out of main, could move to XML/Global.java at some point
-        if (message.equalsIgnoreCase("!reverse")&&!gameChan.equals(blockedChan)) {
+        if ((message.equalsIgnoreCase("!altreverse")||message.equalsIgnoreCase("esrever!"))&&!gameChan.equals(blockedChan)) {
             // get the list of words only if theres nothing in the list alread
             if (wordls == null) {
                 wordls = getWordList();
@@ -63,8 +63,7 @@ public class GameReverse extends ListenerAdapter {
                 //get and shuffle the word
                 String chosenword = wordls.get((int) (Math.random()*wordls.size()-1));
                 String reversed = reverse(chosenword);
-                event.getBot().sendIRC().message(gameChan, "You have "+time+" seconds to reverse this: " + Colors.BOLD+Colors.RED +reversed.toUpperCase() + Colors.NORMAL);
-                //setup amount of given time
+                event.getBot().sendIRC().message(gameChan, "You have "+time+" seconds to reverse this: " + Colors.BOLD+Colors.RED +chosenword.toUpperCase() + Colors.NORMAL);
                 boolean running = true;
                 int key=(int) (Math.random()*100000+1);
                 TimedWaitForQueue timedQueue = new TimedWaitForQueue(Global.bot,time,event.getChannel(),event.getUser(),key);
@@ -74,22 +73,22 @@ public class GameReverse extends ListenerAdapter {
                         MessageEvent CurrentEvent = timedQueue.waitFor(MessageEvent.class);
                         String currentChan = CurrentEvent.getChannel().getName();
                         if (CurrentEvent.getMessage().equalsIgnoreCase(Integer.toString(key))){
-                            event.getBot().sendIRC().message(currentChan,"You did not guess the solution in time, the correct answer would have been "+chosenword.toUpperCase());
+                            event.getBot().sendIRC().message(currentChan,"You did not guess the solution in time, the correct answer would have been "+reversed.toUpperCase());
                             running = false;
                             timedQueue.end();
                         }
-                        else if (CurrentEvent.getMessage().equalsIgnoreCase(chosenword)&&currentChan.equalsIgnoreCase(gameChan)){
-                            event.getBot().sendIRC().message(gameChan, CurrentEvent.getUser().getNick() + ": You have entered the solution! Correct answer was " + chosenword.toUpperCase());
+                        else if (CurrentEvent.getMessage().equalsIgnoreCase(reversed)&&currentChan.equalsIgnoreCase(gameChan)){
+                            event.getBot().sendIRC().message(gameChan, CurrentEvent.getUser().getNick() + ": You have entered the solution! Correct answer was " + reversed.toUpperCase());
                             running = false;
                             timedQueue.end();
                         }
                         else if ((CurrentEvent.getMessage().equalsIgnoreCase("!fuckthis")||(CurrentEvent.getMessage().equalsIgnoreCase("I give up")))&&currentChan.equals(gameChan)){
-                            event.getBot().sendIRC().message(gameChan, CurrentEvent.getUser().getNick() + ": You have given up! Correct answer was " + chosenword.toUpperCase());
+                            event.getBot().sendIRC().message(gameChan, CurrentEvent.getUser().getNick() + ": You have given up! Correct answer was " + reversed.toUpperCase());
                             running = false;
                             timedQueue.end();
                         }
                     } catch (InterruptedException ex) {
-                        //      activechan.remove(CurrentEvent.getChannel().getName());
+                        //      activechan.remove(currentChan);
                         ex.printStackTrace();
                     }
                 }

@@ -4,7 +4,7 @@
 * and open the template in the editor.
 */
 
-package Wheatley;
+package testbot;
 
 import java.util.ArrayList;
 import org.pircbotx.Colors;

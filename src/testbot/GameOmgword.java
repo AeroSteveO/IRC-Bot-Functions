@@ -4,7 +4,7 @@
 * and open the template in the editor.
 */
 
-package Wheatley;
+package testbot;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
