@@ -17,13 +17,13 @@ import org.pircbotx.hooks.managers.BackgroundListenerManager;
 
 /**
  *
- * @author Stephen
+ * @author Steve-O
  */
 public class TestBot extends ListenerAdapter {
     
     @Override
     public void onMessage(final MessageEvent event) throws Exception {
-// in case something should be done here
+        // in case something should be done here
     }
     @Override
     // Rejoin on Kick
@@ -45,15 +45,14 @@ public class TestBot extends ListenerAdapter {
         BackgroundListenerManager BackgroundListener = new BackgroundListenerManager();
         
         Configuration.Builder configuration = new Configuration.Builder()
-                .setName("TestBot") //Set the nick of the bot. CHANGE IN YOUR CODE
-                .setLogin("LQ") //login part of hostmask, eg name:login@host
-                .setAutoNickChange(true) //Automatically change nick when the current one is in use
-                .setCapEnabled(true) //Enable CAP features
+                .setName("TestBot")                    //Set the nick of the bot. CHANGE IN YOUR CODE
+                .setLogin("LQ")                        // login part of hostmask, eg name:login@host
+                .setAutoNickChange(true)               // Automatically change nick when the current one is in use
+                .setCapEnabled(true)                   // Enable CAP features
                 .addAutoJoinChannel("#rapterverse")
-//.addCapHandler(new TLSCapHandler(new UtilSSLSocketFactory().trustAllCertificates(), true))
                 .setAutoReconnect(true)
-                .setMaxLineLength(425)
-                .setListenerManager(BackgroundListener)//Allow for logger background listener
+                .setMaxLineLength(425)                 // This is for the IRC networks I use, it can be increased/decreased as needed
+                .setListenerManager(BackgroundListener)// Allow for logger background listener
                 .addListener(new TestBot())
                 .addListener(new Why())
                 .addListener(new Ignite())
@@ -70,7 +69,6 @@ public class TestBot extends ListenerAdapter {
                 .addListener(new EnglishSayings())
                 .addListener(new SimplePing())
                 .setServerHostname("irc.stevensnet.info"); //Join the official #pircbotx channel
-                //.buildConfiguration();
         BackgroundListener.addListener(new Logger(),true); //Add logger background listener
         Configuration config = configuration.buildConfiguration();
         //bot.connect throws various exceptions for failures
