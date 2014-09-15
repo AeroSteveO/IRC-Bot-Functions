@@ -68,6 +68,7 @@ public class TestBot extends ListenerAdapter {
                 .addListener(new GameAltReverse())
                 .addListener(new EnglishSayings())
                 .addListener(new SimplePing())
+                .addListener(new IMDB())
                 .setServerHostname("irc.stevensnet.info"); //Join the official #pircbotx channel
         BackgroundListener.addListener(new Logger(),true); //Add logger background listener
         Configuration config = configuration.buildConfiguration();
