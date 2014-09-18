@@ -15,9 +15,9 @@ import org.pircbotx.PircBotX;
  *
  */
 public class Global {
-    public static String BotOwner = new String(); //Updated in the Main .java file from Setings.XML
-    public static String MainNick = new String(); //Updated in the Main .java file from Setings.XML
-    public static String NickPass = new String(); //Updated in the Main .java file from Setings.XML
+    public static String botOwner = new String(); //Updated in the Main .java file from Setings.XML
+    public static String mainNick = new String(); //Updated in the Main .java file from Setings.XML
+    public static String nickPass = new String(); //Updated in the Main .java file from Setings.XML
     public static boolean reconnect = true;
     public static PircBotX bot;
     public static String commandPrefix = "!";       // Not implemented yet in other functions
