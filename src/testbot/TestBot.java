@@ -66,6 +66,7 @@ public class TestBot extends ListenerAdapter {
                 .addListener(new GameOmgword())
                 .addListener(new GameReverse())
                 .addListener(new GameAltReverse())
+                .addListener(new GameGuessTheNumber())
                 .addListener(new EnglishSayings())
                 .addListener(new SimplePing())
                 .addListener(new IMDB())
