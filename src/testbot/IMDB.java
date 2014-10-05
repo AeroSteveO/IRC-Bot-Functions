@@ -37,7 +37,6 @@ public class IMDB extends ListenerAdapter {
         if (message.toLowerCase().matches("!imdb\\s[a-z\\s]+\\s[0-9]{4}")){
             String[] msgSplit = message.split(" ");
             String year = msgSplit[msgSplit.length-1];
-            System.out.println(year);
             String movieTitle = message.split(" ",2)[1].split(year)[0];
             event.getBot().sendIRC().message(event.getChannel().getName(),parseImdbMovieSearch(imdbUrlWithYear(movieTitle,year)));
             
@@ -62,7 +61,6 @@ public class IMDB extends ListenerAdapter {
         try{
             JSONObject movieJSON = (JSONObject) parser.parse(movieSearchJSON);
             String title = (String) (String) movieJSON.get("Title");
-//            String year = (String) (String) movieJSON.get("Year");
             String mpaaRating = (String) (String) movieJSON.get("Rated");
             String imdbRating = (String) (String) movieJSON.get("imdbRating");
             String id = (String) (String) movieJSON.get("imdbID");
