@@ -38,14 +38,20 @@ import org.pircbotx.hooks.events.MessageEvent;
 public class Logger extends ListenerAdapter{
     ArrayList<String> log = new ArrayList<>();
     Boolean success = false;
-    String BotOwner = "nick"; //input the name of the bot owner so they can be notified if the logs fail to be 
+// Can use local class botowner if you don't want to use a global botowner
+//    String BotOwner = "nick"; //input the name of the bot owner so they can be notified if the logs fail to be 
     public void onMessage(MessageEvent event) throws IOException {
         String message = Colors.removeFormattingAndColors(event.getMessage());
-        log.add("<"+event.getUser().getNick()+"> "+message);
-        if(log.size()>100||(message.equalsIgnoreCase("!save logs")&&event.getUser().getNick().equalsIgnoreCase(BotOwner))){
+        
+        if (!event.getUser().getNick().equalsIgnoreCase(event.getBot().getUserBot().getNick()))
+            log.add("<"+event.getUser().getNick()+"> "+message);
+        
+        if(log.size()>100||((message.equalsIgnoreCase("!save logs")||message.equalsIgnoreCase("!save all"))&&event.getUser().getNick().equalsIgnoreCase(Global.botOwner))){
             success = saveToFile(log);
             if(!success)
-                event.getBot().sendIRC().notice(BotOwner,"Log file failed to save");
+                event.getBot().sendIRC().notice(Global.botOwner,"Log file failed to save");
+            else if (message.equalsIgnoreCase("!save all")||message.equalsIgnoreCase("!save logs"))
+                event.getBot().sendIRC().notice(Global.botOwner,"Log file saved");
             log.clear();
         }
     }
