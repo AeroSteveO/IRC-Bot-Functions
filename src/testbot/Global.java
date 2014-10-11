@@ -11,7 +11,12 @@ import org.pircbotx.PircBotX;
 /**
  *
  * @author Steve-O
- * YES GASP I KNOW GLOBAL VARIABLES ARE REALLY NICE SOMETIMES
+ * botOwner      - User with all powers over the bot, and ability to shut the bot down
+ * mainNick      - The intended nickname for the bot, not necessarily the current nickname
+ * nickPass      - The nickServ password for the bot
+ * commandPrefix - The character that signals the bot that a command is being sent
+ * reconnect     - Boolean to activate the aggressive server reconnect loop
+ * bot           - Current PircBotX bot object
  *
  */
 public class Global {
