@@ -6,15 +6,12 @@
 
 package testbot;
 
+import Objects.TimedWaitForQueue;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-import org.pircbotx.Channel;
 import org.pircbotx.Colors;
-import org.pircbotx.PircBotX;
-import org.pircbotx.User;
 import org.pircbotx.hooks.ListenerAdapter;
-import org.pircbotx.hooks.WaitForQueue;
 import org.pircbotx.hooks.events.MessageEvent;
 
 /**
@@ -105,51 +102,5 @@ public class GameGuessTheNumber extends ListenerAdapter {
     }
         private static int createInt(int lowerBound,int upperBound){
         return (int) (Math.random()*upperBound)+lowerBound;
-    }
-    public class TimedWaitForQueue extends WaitForQueue{
-        int time;
-        private QueueTime runnable = null;
-        Thread t;
-        public TimedWaitForQueue(MessageEvent event, int time, int key) throws InterruptedException {
-            super(event.getBot());
-            this.time=time;
-            QueueTime runnable = new QueueTime(Global.bot,time,event.getChannel(),event.getBot().getUserBot(),key);
-            this.t = new Thread(runnable);
-            runnable.giveT(t);
-            t.start();
-        }
-        public void end() throws InterruptedException{
-            this.close();
-            t.join(1000);
-        }
-    }
-    public class QueueTime implements Runnable {
-        int time;
-        User user;
-        Channel chan;
-        int key;
-        PircBotX bot;
-        Thread t;
-        QueueTime(PircBotX bot, int time, Channel chan, User user, int key) {
-            this.time = time;
-            this.chan=chan;
-            this.user=user;
-            this.key=key;
-            this.bot=bot;
-        }
-        
-        public void giveT(Thread t) {
-            this.t = t;
-        }
-        
-        @Override
-        public void run() {
-            try {
-                Thread.sleep(time*1000);
-                bot.getConfiguration().getListenerManager().dispatchEvent(new MessageEvent(Global.bot,chan,user,Integer.toString(key)));
-            } catch (InterruptedException ex) {
-                ex.printStackTrace();
-            }
-        }
     }
 }

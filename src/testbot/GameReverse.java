@@ -6,17 +6,14 @@
 
 package testbot;
 
+import Objects.TimedWaitForQueue;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
-import org.pircbotx.Channel;
 import org.pircbotx.Colors;
-import org.pircbotx.PircBotX;
-import org.pircbotx.User;
 import org.pircbotx.hooks.ListenerAdapter;
-import org.pircbotx.hooks.WaitForQueue;
 import org.pircbotx.hooks.events.MessageEvent;
 
 /**
@@ -67,7 +64,7 @@ public class GameReverse extends ListenerAdapter {
                 //setup amount of given time
                 boolean running = true;
                 int key=(int) (Math.random()*100000+1);
-                TimedWaitForQueue timedQueue = new TimedWaitForQueue(Global.bot,time,event.getChannel(),event.getUser(),key);
+                TimedWaitForQueue timedQueue = new TimedWaitForQueue(event,time,key);
                 
                 while (running){  //magical BS timer built into a waitforqueue, only updates upon message event
                     try {
@@ -123,50 +120,5 @@ public class GameReverse extends ListenerAdapter {
             output.append(characters.get(i-1));
         }
         return(output.toString());
-    }
-    public class TimedWaitForQueue extends WaitForQueue{
-        int time;
-        Thread t;
-        public TimedWaitForQueue(PircBotX bot,int time, Channel chan,User user, int key) throws InterruptedException {
-            super(bot);
-            this.time=time;
-            QueueTime runnable = new QueueTime(Global.bot,time,chan,user,key);
-            this.t = new Thread(runnable);
-            runnable.giveT(t);
-            t.start();
-        }
-        public void end() throws InterruptedException{
-            this.close();
-            t.join(1000);
-        }
-    }
-    public class QueueTime implements Runnable {
-        int time;
-        User user;
-        Channel chan;
-        int key;
-        PircBotX bot;
-        Thread t;
-        QueueTime(PircBotX bot, int time, Channel chan, User user, int key) {
-            this.time = time;
-            this.chan=chan;
-            this.user=user;
-            this.key=key;
-            this.bot=bot;
-        }
-        
-        public void giveT(Thread t) {
-            this.t = t;
-        }
-        
-        @Override
-        public void run() {
-            try {
-                Thread.sleep(time*1000);
-                bot.getConfiguration().getListenerManager().dispatchEvent(new MessageEvent(Global.bot,chan,user,Integer.toString(key)));
-            } catch (InterruptedException ex) {
-                ex.printStackTrace();
-            }
-        }
     }
 }
