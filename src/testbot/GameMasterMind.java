@@ -19,6 +19,13 @@ import org.pircbotx.hooks.events.MessageEvent;
  * @author Steve-O
  *
  * Requested by: PiTheMathGod
+ * 
+ * Requirements:
+ * - APIs
+ *    N/A
+ * - Custom Classes
+ *    TimedWaitForQueue
+ * 
  * Activate Command with:
  *      !Mastermind [length] [chars] [lives]
  *

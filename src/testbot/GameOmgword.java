@@ -21,6 +21,12 @@ import org.pircbotx.hooks.events.*;
  * Based on the C# IRC bot, CasinoBot
  * which is really unstable and breaks all the time
  *
+ * Requirements:
+ * - APIs
+ *    N/A
+ * - Custom Classes
+ *    TimedWaitForQueue
+ * 
  * Activate command with:
  *      !omgword
  *

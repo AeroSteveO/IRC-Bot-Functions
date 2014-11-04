@@ -18,6 +18,12 @@ import org.pircbotx.hooks.events.MessageEvent;
  *
  * @author Steve-O
  *
+ * Requirements:
+ * - APIs
+ *    N/A
+ * - Custom Classes
+ *    TimedWaitForQueue
+ * 
  * Activate Command with:
  *      !GuessTheNumber [upperBound]
  *      !GuessNumber [upperBound]
