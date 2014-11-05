@@ -22,60 +22,82 @@ import org.pircbotx.hooks.events.MessageEvent;
  * Based on the C# IRC bot, CasinoBot
  * which is generally unstable and requires windows to run
  *
+ * Requirements:
+ * - APIs
+ *    N/A
+ * - Custom Objects
+ *    TimedWaitForQueue
+ * - Linked Classes
+ *    Global
+ *    GameControl
+ * 
  * Activate Command with:
  *      !bomb
+ *          Gives the user a bomb, the user has to pick the correctly colored
+ *          wire to cut before the time limit or the user loses
+ *
  */
 public class GameBomb extends ListenerAdapter {
     // Woohooo basic variables for junk
-    int time = 10;
+    int time = 10;  // Seconds
     String blockedChan = "#dtella";
     ArrayList<String> colorls = null;
+    int prize = 70; // $
     
     @Override
     public void onMessage(MessageEvent event) throws FileNotFoundException, InterruptedException {
         String message = Colors.removeFormattingAndColors(event.getMessage());
-        String gameChan = event.getChannel().getName();
-        if (colorls == null) {
-            colorls = getColorList();
-        }
-        if (message.equalsIgnoreCase("!bomb")&&!gameChan.equals(blockedChan)){
+        
+        if (message.equalsIgnoreCase("!bomb")&&!blockedChan.equalsIgnoreCase(event.getChannel().getName())){
+            if (colorls == null) {
+                colorls = getColorList();
+            }
             String player = event.getUser().getNick();
             List<String> colours = new ArrayList<>();
             String colorlist = "";
             for (int i=0;i<5;i++){
                 colours.add(colorls.get((int) (Math.random()*colorls.size()-1)).toLowerCase());
             }
+            
+//            if (colorlist.equals("")){
             for (int i=0; i<colours.size()-1;i++){
                 colorlist = colorlist + colours.get(i) + ", ";
             }
-            
             colorlist = colorlist + colours.get(colours.size()-1);
-            boolean running = true;
+//            }
+            int key = (int) (Math.random()*100000+1);
+//            DateTime dt = new DateTime();
+//            DateTime end = dt.plusSeconds(time);
             String solution = colours.get((int) (Math.random()*colours.size()-1));
             event.respond("You recieved the bomb. You have " + time + " seconds to defuse it by cutting the right cable." + Colors.BOLD + " Choose your destiny:" + Colors.NORMAL);
-            event.getBot().sendIRC().message(gameChan,"Wire colors include: " + colorlist);
-            int key=(int) (Math.random()*100000+1);
-            TimedWaitForQueue timedQueue = new TimedWaitForQueue(event,time,key);
-            while (running){
-                MessageEvent CurrentEvent = timedQueue.waitFor(MessageEvent.class);
-                
+            event.getBot().sendIRC().message(event.getChannel().getName(),"Wire colors include: " + colorlist);
+            TimedWaitForQueue queue = new TimedWaitForQueue(event, time, key);
+            while (true){
+                MessageEvent CurrentEvent = queue.waitFor(MessageEvent.class);
+//                dt = new DateTime();
                 if (CurrentEvent.getMessage().equalsIgnoreCase(Integer.toString(key))){
-                    event.getBot().sendIRC().message(gameChan,"the bomb explodes in front of " + player + ". Seems like you did not even notice the big beeping suitcase.");
-                    running = false;
-                    timedQueue.end();
+                    int moneyLoss = 50;
+                    event.getBot().sendIRC().message(event.getChannel().getName(),"the bomb explodes in front of " + player + ". Seems like you did not even notice the big beeping suitcase. You lose $"+moneyLoss);
+                    colours.clear();
+                    GameControl.scores.subtractScore(player, moneyLoss);
+                    GameControl.scores.addScore(event.getBot().getNick(), moneyLoss);
+                    queue.close();
                 }
-                else if (CurrentEvent.getMessage().equalsIgnoreCase(solution)&&CurrentEvent.getUser().getNick().equalsIgnoreCase(player)){
-                    event.getBot().sendIRC().message(gameChan, player + " defused the bomb. Seems like he was wise enough to buy a defuse kit." );
-                    running = false;
-                    timedQueue.end();
+                else if (CurrentEvent.getMessage().equalsIgnoreCase(solution)&&CurrentEvent.getUser().getNick().equalsIgnoreCase(player)&&CurrentEvent.getChannel().getName().equalsIgnoreCase(event.getChannel().getName())){
+                    event.getBot().sendIRC().message(event.getChannel().getName(), player + " defused the bomb. Seems like he was wise enough to buy a defuse kit. You win $"+prize );
+                    colours.clear();
+                    GameControl.scores.addScore(player,prize);
+                    queue.close();
                 }
-                else if (!CurrentEvent.getMessage().equalsIgnoreCase(solution)&&CurrentEvent.getUser().getNick().equalsIgnoreCase(player)) {
-                    event.getBot().sendIRC().message(gameChan,"The bomb explodes in " + player + "'s hands. You lost your life.");
-                    running = false;
-                    timedQueue.end();
+                else if (!CurrentEvent.getMessage().equalsIgnoreCase(solution)&&CurrentEvent.getUser().getNick().equalsIgnoreCase(player)&&CurrentEvent.getChannel().getName().equalsIgnoreCase(event.getChannel().getName())){
+                    int moneyLoss = 20;
+                    event.getBot().sendIRC().message(event.getChannel().getName(),"The bomb explodes in " + player + "'s hands. You lost your life and - even worse - $"+moneyLoss+". The right color would have been "+Colors.BOLD+Colors.RED+solution);
+                    colours.clear();
+                    GameControl.scores.subtractScore(player, moneyLoss);
+                    GameControl.scores.addScore(event.getBot().getNick(), moneyLoss);
+                    queue.close();
                 }
             }
-            colours.clear();
         }
     }
     public ArrayList<String> getColorList() throws FileNotFoundException{

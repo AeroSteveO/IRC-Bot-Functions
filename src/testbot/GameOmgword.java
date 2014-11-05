@@ -5,12 +5,9 @@
 */
 
 package testbot;
+import Objects.Game;
 import Objects.TimedWaitForQueue;
-import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
 import org.pircbotx.Colors;
 import org.pircbotx.hooks.*;
 import org.pircbotx.hooks.events.*;
@@ -24,8 +21,12 @@ import org.pircbotx.hooks.events.*;
  * Requirements:
  * - APIs
  *    N/A
- * - Custom Classes
- *    TimedWaitForQueue
+ * - Custom Objects
+ *    ScoreArray
+ *    GameList
+ * - Linked Classes
+ *    Global
+ *    GameControl
  * 
  * Activate command with:
  *      !omgword
@@ -33,103 +34,66 @@ import org.pircbotx.hooks.events.*;
  */
 public class GameOmgword extends ListenerAdapter {
     // Initialize needed variables
-    static ArrayList<String> wordls = null;
-    static ArrayList<String> activechan = new ArrayList<String>();
-    boolean isactive = false;
+//    String blockedChan = "#dtella";
+    int time = 30;  // Seconds
+    int basePrize = 20; // $
     String blockedChan = "#dtella";
-    int time = 30;
+//    static GameArray activeGame = new GameArray();
+    
     @Override
     public void onMessage(MessageEvent event) throws FileNotFoundException, InterruptedException{
         String message = Colors.removeFormattingAndColors(event.getMessage());
         String gameChan = event.getChannel().getName();
+        int currentIndex=0;
         // keep the spammy spammy out of main, could move to XML/Global.java at some point
-        if (message.equalsIgnoreCase("!omgword")&&!gameChan.equals(blockedChan)) {
-            // get the list of words only if theres nothing in the list alread
-            if (wordls == null) {
-                wordls = getWordList();
-            }
-            // check if the current active channel list is empty
-            if (activechan.isEmpty()){
-                activechan.add(gameChan);
-            }
-            else{ //if its not empty, check if the channel calling the function is already active
-                for (int i=0;i<activechan.size();i++){
-                    if (activechan.get(i).equals(gameChan)){
-                        isactive = true;
-                    }
-                }
-                if (!isactive) { //if its not active, add it to the active channel list, and start the game
-                    activechan.add(gameChan);
-                }
-            }
-            if (!isactive){
+        if (message.equalsIgnoreCase("!omgword")&&!blockedChan.equalsIgnoreCase(gameChan)) {
+            
+            if (!GameControl.activeGame.isGameActive(gameChan, "omgword")){
+                
+                Game currentGame = new Game("shuffle");
                 //get and shuffle the word
-                String chosenword = wordls.get((int) (Math.random()*wordls.size()-1));
-                String scrambled = shuffle(chosenword);
                 boolean running = true;
-                event.getBot().sendIRC().message(gameChan, "You have "+time+" seconds to solve this: " + Colors.BOLD+Colors.RED +scrambled.toUpperCase() + Colors.NORMAL);
-                //setup amount of given time
+//                currentIndex = Global.activeGame.getGameIdx(gameChan,"omgword");
+                String chosenword = currentGame.getChosenWord();
+                String scrambled = currentGame.getSolution();
+                
+                event.getBot().sendIRC().message(event.getChannel().getName(), "You have "+time+" seconds to solve this: " + Colors.BOLD+Colors.RED +scrambled.toUpperCase() + Colors.NORMAL);
+                
                 int key=(int) (Math.random()*100000+1);
                 TimedWaitForQueue timedQueue = new TimedWaitForQueue(event,time,key);
-                while (running){  //magical BS timer built into a waitforqueue, only updates upon message event
+                while (running){
                     try {
                         MessageEvent CurrentEvent = timedQueue.waitFor(MessageEvent.class);
-                        String currentChan = CurrentEvent.getChannel().getName();
-                        
                         if (CurrentEvent.getMessage().equalsIgnoreCase(Integer.toString(key))){
-                            event.getBot().sendIRC().message(currentChan,"You did not guess the solution in time, the correct answer would have been "+chosenword.toUpperCase());
+                            event.getBot().sendIRC().message(gameChan,"You did not guess the solution in time, the correct answer would have been "+Colors.BOLD+Colors.RED+chosenword.toUpperCase());
                             running = false;
                             timedQueue.end();
                         }
-                        else if (CurrentEvent.getMessage().equalsIgnoreCase(chosenword)&&currentChan.equalsIgnoreCase(gameChan)){
-                            event.getBot().sendIRC().message(gameChan, CurrentEvent.getUser().getNick() + ": You have entered the solution! Correct answer was " + chosenword.toUpperCase());
-                            running = false;
-                            timedQueue.end();
+                        else if (CurrentEvent.getChannel().getName().equalsIgnoreCase(gameChan)&&!CurrentEvent.getUser().getNick().equalsIgnoreCase(event.getBot().getNick())){
+                            
+                            if (CurrentEvent.getMessage().equalsIgnoreCase(chosenword)){
+                                
+                                int timeSpent = currentGame.getTimeSpent();
+                                int prize = GameControl.scores.addScore(CurrentEvent.getUser().getNick(), basePrize+chosenword.length(), chosenword.length(), timeSpent, time);
+                                event.getBot().sendIRC().message(gameChan, CurrentEvent.getUser().getNick() + " entered the solution in "+timeSpent+" seconds and wins $"+prize+". Solution: " + Colors.BOLD+Colors.RED+chosenword.toUpperCase());
+                                
+//                                event.getBot().sendIRC().message(event.getChannel().getName(), CurrentEvent.getUser().getNick() + ": You have entered the solution! Correct answer was " +Colors.BOLD+Colors.RED+ chosenword.toUpperCase());
+                                running = false;
+                                timedQueue.end();
+                            }
+                            
+                            else if ((CurrentEvent.getMessage().equalsIgnoreCase("!fuckthis")||(CurrentEvent.getMessage().equalsIgnoreCase("I give up")))&&CurrentEvent.getChannel().getName().equals(event.getChannel().getName())){
+                                event.getBot().sendIRC().message(event.getChannel().getName(), CurrentEvent.getUser().getNick() + ": You have given up! Correct answer was " + Colors.BOLD+Colors.RED+chosenword.toUpperCase());
+                                running = false;
+                                timedQueue.end();
+                            }
                         }
-                        else if ((CurrentEvent.getMessage().equalsIgnoreCase("!fuckthis")||(CurrentEvent.getMessage().equalsIgnoreCase("I give up")))&&currentChan.equals(gameChan)){
-                            event.getBot().sendIRC().message(gameChan, CurrentEvent.getUser().getNick() + ": You have given up! Correct answer was " + chosenword.toUpperCase());
-                            running = false;
-                            timedQueue.end();
-                        }
-                    } catch (InterruptedException ex) {
-                        //      activechan.remove(currentChan);
+                    } catch (Exception ex) {
                         ex.printStackTrace();
                     }
                 }
-                activechan.remove(gameChan);
             }
-            else
-                isactive=false;
-        }
-    }
-    // Stupid freaking warning is wrong, breaks code when implemented
-    @SuppressWarnings("SizeReplaceableByIsEmpty")
-    // Shuffle up the chosen word string
-    public static String shuffle(String input){
-        List<Character> characters = new ArrayList<Character>();
-        for(char c:input.toCharArray()){
-            characters.add(c);
-        }
-        StringBuilder output = new StringBuilder(input.length());
-        while(characters.size()!=0){
-            int randPicker = (int)(Math.random()*characters.size());
-            output.append(characters.remove(randPicker));
-        }
-        return(output.toString());
-    }
-    // Grabs the wordlist and loads into variable
-    public ArrayList<String> getWordList() throws FileNotFoundException{
-        try{
-            Scanner wordfile = new Scanner(new File("wordlist.txt"));
-            ArrayList<String> wordls = new ArrayList<String>();
-            while (wordfile.hasNext()){
-                wordls.add(wordfile.next());
-            }
-            wordfile.close();
-            return (wordls);
-        } catch (FileNotFoundException ex) {
-            ex.printStackTrace();
-            return null;
+            GameControl.activeGame.remove(gameChan,"omgword");
         }
     }
 }

@@ -6,9 +6,9 @@
 
 package testbot;
 
+import Objects.Game;
 import Objects.TimedWaitForQueue;
 import java.io.FileNotFoundException;
-import java.util.ArrayList;
 import java.util.regex.Pattern;
 import org.pircbotx.Colors;
 import org.pircbotx.hooks.ListenerAdapter;
@@ -21,8 +21,12 @@ import org.pircbotx.hooks.events.MessageEvent;
  * Requirements:
  * - APIs
  *    N/A
- * - Custom Classes
+ * - Custom Objects
+ *    Game
  *    TimedWaitForQueue
+ * - Linked Classes
+ *    Global
+ *    GameControl
  * 
  * Activate Command with:
  *      !GuessTheNumber [upperBound]
@@ -36,31 +40,56 @@ import org.pircbotx.hooks.events.MessageEvent;
  */
 public class GameGuessTheNumber extends ListenerAdapter {
     String blockedChan = "#dtella";
-    static ArrayList<String> activeGame = new ArrayList<>();
+    int basePrize = 15; // $
+    //static Game.GameArray activeGame = new Game.GameArray();
     
+    @Override
     public void onMessage(MessageEvent event) throws FileNotFoundException, InterruptedException {
         String message = Colors.removeFormattingAndColors(event.getMessage());
         String gameChan = event.getChannel().getName();
         int currentIndex=0;
         
-        if ((message.split(" ")[0].equalsIgnoreCase("!GuessTheNumber")||message.split(" ")[0].equalsIgnoreCase("!guessnumber"))&&!gameChan.equalsIgnoreCase(blockedChan)) {
+        if ((message.split(" ")[0].equalsIgnoreCase("!GuessTheNumber")||message.split(" ")[0].equalsIgnoreCase("!guessnumber"))&&!blockedChan.equalsIgnoreCase(gameChan)) {
             
-            if (!activeGame.contains(gameChan)){
-                String[] options = message.split(" ");
-                int length = 100;
+            int length = 100;
+            
+            if (message.split(" ").length>=2){
                 
-                if (options.length==2){
-                    length = Integer.parseInt(options[1]);
-                    if (length>1000)
-                        length=1000;
+                String[] options = message.split(" ");
+                
+                if (!options[1].matches("[0-9]+")){
+                    event.getBot().sendIRC().notice(event.getUser().getNick(),"You must input an integer");
+                    return;
                 }
                 
-                int lives = length / 10;
+                else if (options.length>2){
+                    event.getBot().sendIRC().notice(event.getUser().getNick(),"This command takes 1 integer input maximum");
+                    return;
+                }
+                
+                else if (options.length==2){
+                    
+                    length = Integer.parseInt(options[1]);
+                    
+                    if (length>1000)
+                        length=1000;
+                    
+                    else if (length<10)
+                        length = 10;
+                    
+                }
+            }
+            
+            
+            if (!GameControl.activeGame.isGameActive(gameChan, "guessthenumber")){
+                
+                
+                int lives =(int) 10+length/100;
                 int time = 30+(length)/5;
                 
-                activeGame.add(gameChan);
-                currentIndex = activeGame.indexOf(gameChan);
-                String solution = Integer.toString(createInt(1,length));
+                Game currentGame = new Game("int", length, 1);
+//                currentIndex = Global.activeGame.getGameIdx(gameChan,"guessthenumber");
+                String solution = Integer.toString(currentGame.getInt());
                 
                 boolean running=true;
                 int key=(int) (Math.random()*100000+1);
@@ -70,43 +99,48 @@ public class GameGuessTheNumber extends ListenerAdapter {
                 while (running){
                     MessageEvent CurrentEvent = timedQueue.waitFor(MessageEvent.class);
                     String guess = CurrentEvent.getMessage();
-                    String currentChan = CurrentEvent.getChannel().getName();
                     if (CurrentEvent.getMessage().equalsIgnoreCase(Integer.toString(key))){
-                        event.getBot().sendIRC().message(gameChan,"Game over! You've run out of time. "+Colors.BOLD + solution + Colors.NORMAL + " would have been the solution.");
+                        event.getBot().sendIRC().message(gameChan,"Game over! You've run out of time. "+Colors.BOLD+Colors.RED + solution + Colors.NORMAL + " would have been the solution.");
                         running = false;
                         timedQueue.end();
                     }
-                    else if ((CurrentEvent.getMessage().equals("!fuckthis")||(CurrentEvent.getMessage().equalsIgnoreCase("I give up")))&&currentChan.equals(gameChan)){
-                        CurrentEvent.respond("You have given up! Correct answer was " + solution);
-                        running = false;
-                        timedQueue.end();
-                    }
-                    else if (Pattern.matches("[0-9]{"+1+","+length+"}",guess)&&currentChan.equalsIgnoreCase(gameChan)){
-                        if (lives<=0){
-                            CurrentEvent.respond("You've run out of lives, the solution was "+solution);
+                    else if (CurrentEvent.getChannel().getName().equalsIgnoreCase(gameChan)&&!CurrentEvent.getUser().getNick().equalsIgnoreCase(event.getBot().getNick())){
+                        if ((CurrentEvent.getMessage().equals("!fuckthis")||(CurrentEvent.getMessage().equalsIgnoreCase("I give up")))){
+                            CurrentEvent.respond("You have given up! Correct answer was " +Colors.BOLD+Colors.RED+ solution);
                             running = false;
                             timedQueue.end();
                         }
-                        else if (guess.equalsIgnoreCase(solution)){
-                            event.getBot().sendIRC().message(gameChan,"Congratulations " + CurrentEvent.getUser().getNick() +  ", you've found the number: " + Colors.BOLD + solution + Colors.NORMAL);
-                            running = false;
-                            timedQueue.end();
-                        }
-                        else if (Integer.parseInt(guess)<Integer.parseInt(solution)){
-                            CurrentEvent.respond("Your guess is too low, lives left: "+lives);
-                            lives--;
-                        }
-                        else if (Integer.parseInt(guess)>Integer.parseInt(solution)){
-                            CurrentEvent.respond("Your guess is too high, lives left: "+lives);
-                            lives--;
+                        else if (Pattern.matches("[0-9]{"+1+","+length+"}",guess)){
+                            if (lives<=0){
+                                CurrentEvent.respond("You've run out of lives, the solution was "+solution);
+                                running = false;
+                                timedQueue.end();
+                            }
+                            else if (guess.equalsIgnoreCase(solution)){
+                                
+                                int timeSpent = currentGame.getTimeSpent();
+                                int prize = GameControl.scores.addScore(CurrentEvent.getUser().getNick(), basePrize+Integer.toString(length).length()+lives,Integer.toString(length).length(), timeSpent, time);
+                                event.getBot().sendIRC().message(gameChan, CurrentEvent.getUser().getNick() + " entered the number in "+timeSpent+" seconds and wins $"+prize+". Number: " + Colors.BOLD+Colors.RED+solution);
+                                
+//                                event.getBot().sendIRC().message(gameChan,"Congratulations " + CurrentEvent.getUser().getNick() +  ", you've found the number: " + Colors.BOLD +Colors.RED+ solution + Colors.NORMAL);
+                                running = false;
+                                timedQueue.end();
+                            }
+                            else if (Integer.parseInt(guess)<Integer.parseInt(solution)){
+                                lives--;
+                                CurrentEvent.respond("Your guess is too low, lives left: "+lives);
+                            }
+                            else if (Integer.parseInt(guess)>Integer.parseInt(solution)){
+                                lives--;
+                                CurrentEvent.respond("Your guess is too high, lives left: "+lives);
+                            }
                         }
                     }
                 }
-                activeGame.remove(activeGame.indexOf(gameChan)); //updated current index of the game
+                GameControl.activeGame.remove(gameChan,"guessthenumber"); //updated current index of the game
             }
+            else
+                event.getBot().sendIRC().notice(event.getUser().getNick(),"Game Currently running in this channel");
         }
-    }
-        private static int createInt(int lowerBound,int upperBound){
-        return (int) (Math.random()*upperBound)+lowerBound;
     }
 }
