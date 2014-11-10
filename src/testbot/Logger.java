@@ -20,6 +20,14 @@ import org.pircbotx.hooks.events.MessageEvent;
  *
  * @author Steve-O
  * 
+ * Requirements:
+ * - APIs
+ *    N/A
+ * - Custom Objects
+ *    N/A
+ * - Linked Classes
+ *    Global
+ * 
  * Simple logging listener, updates the log file every 100 lines of chat, so to not spam the file
  * To use: 
  * --Before the configuration lines
@@ -38,27 +46,32 @@ import org.pircbotx.hooks.events.MessageEvent;
 public class Logger extends ListenerAdapter{
     ArrayList<String> log = new ArrayList<>();
     Boolean success = false;
-// Can use local class botowner if you don't want to use a global botowner
-//    String BotOwner = "nick"; //input the name of the bot owner so they can be notified if the logs fail to be 
+    
+    @Override
     public void onMessage(MessageEvent event) throws IOException {
         String message = Colors.removeFormattingAndColors(event.getMessage());
         
         if (!event.getUser().getNick().equalsIgnoreCase(event.getBot().getUserBot().getNick()))
             log.add("<"+event.getUser().getNick()+"> "+message);
         
-        if(log.size()>100||((message.equalsIgnoreCase("!save logs")||message.equalsIgnoreCase("!save all"))&&event.getUser().getNick().equalsIgnoreCase(Global.botOwner))){
+        if(log.size()>100||(message.equalsIgnoreCase("!save")
+                &&(event.getUser().getNick().equalsIgnoreCase(Global.botOwner)&&event.getUser().isVerified()))){
+            
             success = saveToFile(log);
             if(!success)
                 event.getBot().sendIRC().notice(Global.botOwner,"Log file failed to save");
-            else if (message.equalsIgnoreCase("!save all")||message.equalsIgnoreCase("!save logs"))
+            else if (message.equalsIgnoreCase("!save"))
                 event.getBot().sendIRC().notice(Global.botOwner,"Log file saved");
             log.clear();
         }
     }
+    
+    @Override
     public void onAction(ActionEvent event) {
         String action = Colors.removeFormattingAndColors(event.getMessage());
         log.add("* "+event.getUser().getNick()+" "+action);
     }
+    
     private Boolean saveToFile(ArrayList<String> log) throws IOException {
         Boolean isSaved = false;
         File file =new File("WheatleyLogs.plog");
@@ -70,7 +83,7 @@ public class Logger extends ListenerAdapter{
                 FileWriter fileWritter = new FileWriter(file.getName(),true);
                 BufferedWriter bufferWritter = new BufferedWriter(fileWritter);
                 bufferWritter.write("\n"+addition);
-                bufferWritter.close();   
+                bufferWritter.close();
             }
             isSaved=true;
         }catch(IOException e){
