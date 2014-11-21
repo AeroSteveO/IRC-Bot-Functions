@@ -64,6 +64,7 @@ public class TestBot extends ListenerAdapter {
                 .addListener(new GameMasterMind())
                 .addListener(new GameHangman())
                 .addListener(new GameControl())
+                .addListener(new GameBlackjack())
                 .addListener(new GameHighLow())
                 .addListener(new GameSlots())
                 .addListener(new GameOmgword())
