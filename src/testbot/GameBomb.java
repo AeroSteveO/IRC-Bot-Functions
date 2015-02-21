@@ -53,6 +53,7 @@ public class GameBomb extends ListenerAdapter {
             String command = message.split(Global.commandPrefix)[1].toLowerCase();
             String[] cmdSplit = command.split(" ");
             
+            
             if (cmdSplit[0].equalsIgnoreCase("bomb")&&!blockedChan.equalsIgnoreCase(event.getChannel().getName())){
                 List<String> colours = new ArrayList<>();
                 String colorlist = "";
@@ -79,8 +80,18 @@ public class GameBomb extends ListenerAdapter {
                         if (colorls == null) {
                             colorls = getColorList();
                         }
+                        ArrayList<Integer> colorNumbers = new ArrayList<>();
+                        
                         for (int i=0;i<5;i++){
-                            colours.add(colorls.get((int) (Math.random()*colorls.size()-1)).toLowerCase());
+                            int rndNum = (int) (Math.random()*colorls.size()-1);
+                            
+                            if(!colorNumbers.contains(rndNum)){
+                                colours.add(colorls.get(rndNum).toLowerCase());
+                                colorNumbers.add(rndNum);
+                                
+                            }
+                            else
+                                i--;
                         }
                     }
                     
