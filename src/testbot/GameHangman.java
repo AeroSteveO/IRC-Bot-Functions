@@ -134,6 +134,9 @@ public class GameHangman extends ListenerAdapter {
 //                    lives = baselives;
                 GameControl.activeGame.remove(gameChan,"hangman"); //updated current index of the game
             }
+            else {
+                event.getBot().sendIRC().notice(event.getUser().getNick(),"Game Currently running in this channel");
+            }
         }
     }
 }
