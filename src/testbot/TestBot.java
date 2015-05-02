@@ -59,7 +59,7 @@ public class TestBot extends ListenerAdapter {
                 .addListener(new Laser())
                 .addListener(new Logger())
                 .addListener(new RandChan())
-                .addListener(new Shakespeare())
+                .addListener(new Insult())
                 .addListener(new GameBomb())
                 .addListener(new GameMasterMind())
                 .addListener(new GameHangman())
@@ -75,7 +75,7 @@ public class TestBot extends ListenerAdapter {
                 .addListener(new SimplePing())
                 .addListener(new Urban())
                 .addListener(new IMDB())
-                .setServerHostname("irc.stevensnet.info"); //Join the official #pircbotx channel
+                .setServerHostname("aeroSteveO.no-ip.biz"); //Join the official #pircbotx channel
         BackgroundListener.addListener(new Logger(),true); //Add logger background listener
         Configuration config = configuration.buildConfiguration();
         //bot.connect throws various exceptions for failures

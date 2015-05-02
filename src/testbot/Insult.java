@@ -31,16 +31,14 @@ import org.pircbotx.hooks.events.MessageEvent;
  *          insults the given object or 'you' if no object is given, using a 
  *          random insult generated from one of the built in methods
  */
-public class Shakespeare extends ListenerAdapter {
-//    ArrayList<String> first = shakespeareFront();
-//    ArrayList<String> mid = shakespeareMid();
-//    ArrayList<String> ending = shakespeareEnd();
+public class Insult extends ListenerAdapter {
+
     @Override
     public void onMessage(final MessageEvent event) throws Exception {
         String message = Colors.removeFormattingAndColors(event.getMessage());
-        if((message.startsWith("!insult")&&!event.getBot().getUserChannelDao().getChannels(event.getBot().getUserChannelDao().getUser("Pankeiko")).contains(event.getChannel()))||message.startsWith("!slander")){
+        if((message.split(" ")[0].equalsIgnoreCase("!insult")&&!event.getBot().getUserChannelDao().getChannels(event.getBot().getUserChannelDao().getUser("Pankeiko")).contains(event.getChannel()))||message.split(" ")[0].equalsIgnoreCase("!slander")){
             String it;
-            String[] check = message.split(" ");
+            String[] check = message.split(" ",2);
             if (check.length!=2){
                 it = "You ";
             }
@@ -65,9 +63,9 @@ public class Shakespeare extends ListenerAdapter {
                     break;
             }
         }
-        if (message.startsWith("!shakespeare"))    {
+        if (message.split(" ")[0].equalsIgnoreCase("!shakespeare"))    {
             String it;
-            String[] check = message.split(" ");
+            String[] check = message.split(" ",2);
             if (check.length!=2){
                 it = "Thou ";
             }
