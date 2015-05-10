@@ -1,7 +1,7 @@
 /*
 * LASER(it) adds lasers to the provided object.
 * Please embellish or modify this function to suit your own tastes.
-* 
+*
 */
 
 package testbot;
@@ -25,6 +25,7 @@ import org.pircbotx.hooks.events.MessageEvent;
  *
  */
 public class Laser extends ListenerAdapter {
+    
     @Override
     public void onMessage(MessageEvent event) {
         String message = Colors.removeFormattingAndColors(event.getMessage());
@@ -32,7 +33,7 @@ public class Laser extends ListenerAdapter {
             String it;
             String a="";
             String[] parts = null;
-            String[] check = message.split(" ");
+            String[] check = message.split(" ",2);
             if (check.length!=2){
                 it = "it";
             }

@@ -29,19 +29,19 @@ public class Ignite extends ListenerAdapter {
     
     @Override
     public void onMessage(MessageEvent event) {
-            String message = Colors.removeFormattingAndColors(event.getMessage());
-            if (message.toLowerCase().startsWith("!ignite")){
-                String it;
-                String[] check = message.split(" ",2);
-                if (check.length!=2){
-                    it = "it";
-                }
-                else {
-                    it = check[1];
-                }
-                String chat = simpleFront()+ " " + it + " " + simpleEnd();
-                event.getBot().sendIRC().message(event.getChannel().getName(), chat.toUpperCase());
+        String message = Colors.removeFormattingAndColors(event.getMessage());
+        if (message.toLowerCase().startsWith("!ignite")){
+            String it;
+            String[] check = message.split(" ",2);
+            if (check.length!=2){
+                it = "it";
             }
+            else {
+                it = check[1];
+            }
+            String chat = simpleFront()+ " " + it + " " + simpleEnd();
+            event.getBot().sendIRC().message(event.getChannel().getName(), chat.toUpperCase());
+        }
     }
     public static String simpleFront() {
         List<String> a = new ArrayList<>();
