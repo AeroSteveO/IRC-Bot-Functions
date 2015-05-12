@@ -45,7 +45,7 @@ public class TestBot extends ListenerAdapter {
         BackgroundListenerManager BackgroundListener = new BackgroundListenerManager();
         
         Configuration.Builder configuration = new Configuration.Builder()
-                .setName("TestBot")                    //Set the nick of the bot. CHANGE IN YOUR CODE
+                .setName(Global.mainNick)                    //Set the nick of the bot. CHANGE IN YOUR CODE
                 .setLogin("LQ")                        // login part of hostmask, eg name:login@host
                 .setAutoNickChange(true)               // Automatically change nick when the current one is in use
                 .setCapEnabled(true)                   // Enable CAP features
@@ -57,7 +57,6 @@ public class TestBot extends ListenerAdapter {
                 .addListener(new Why())
                 .addListener(new Ignite())
                 .addListener(new Laser())
-                .addListener(new Logger())
                 .addListener(new RandChan())
                 .addListener(new Insult())
                 .addListener(new GameBomb())
@@ -75,6 +74,7 @@ public class TestBot extends ListenerAdapter {
                 .addListener(new SimplePing())
                 .addListener(new Urban())
                 .addListener(new IMDB())
+                .addListener(new DefinitionsListener())
                 .setServerHostname("aeroSteveO.no-ip.biz"); //Join the official #pircbotx channel
         BackgroundListener.addListener(new Logger(),true); //Add logger background listener
         Configuration config = configuration.buildConfiguration();
