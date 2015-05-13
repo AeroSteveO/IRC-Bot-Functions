@@ -27,12 +27,12 @@ import org.pircbotx.hooks.events.MessageEvent;
  * - Custom Objects
  *    N/A
  * - Linked Classes
- *    N/A
+ *    Global
  *
  * Activate Command with:
  *      !Why
  *      [BotName], Why [any question]
- * 
+ *          Responds with a randomly generated reason as to why
  *
  */
 public class Why extends ListenerAdapter {
