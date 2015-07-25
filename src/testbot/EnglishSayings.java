@@ -34,10 +34,11 @@ import org.pircbotx.hooks.events.MessageEvent;
 public class EnglishSayings extends ListenerAdapter {
     ArrayList<String> sayings = getSayings();
     
+    @Override
     public void onMessage(MessageEvent event) throws FileNotFoundException, InterruptedException {
         String message = Colors.removeFormattingAndColors(event.getMessage());
         
-        if (message.equalsIgnoreCase("!saying")){
+        if (message.equalsIgnoreCase("!saying")||message.equalsIgnoreCase("you know what they say")||message.equalsIgnoreCase(Global.mainNick+", you know what they say")){
             switch((int) (Math.random()*3+1)) {
                 case 1:
                     event.getBot().sendIRC().message(event.getChannel().getName(),sayings.get((int) (Math.random()*sayings.size()-1)));
@@ -81,38 +82,31 @@ public class EnglishSayings extends ListenerAdapter {
         ArrayList<String> end = new ArrayList<String>();
         
         for (int i=0;i<sayings.size();i++){
-            if (Pattern.matches("[a-zA-Z]+\\-[a-zA-Z]+", sayings.get(i))){
+            if (Pattern.matches("[-a-zA-Z]+", sayings.get(i))){
                 String[] grabbedSaying = sayings.get(i).split("-");
                 
                 if (grabbedSaying.length==2){
                     start.add(grabbedSaying[0]);
                     end.add(grabbedSaying[1]);
                 }
-//                else{
-//                    start.add(grabbedSaying[0]);
-//                    end.add(grabbedSaying[grabbedSaying.length-1]);
-//                    for(int c=1;c<grabbedSaying.length-1;i++){
-//                        middle.add(grabbedSaying[c]);
-//                        System.out.print(grabbedSaying[c]);
-//                    }
-//                }
-//                System.out.print(sayings.get(i));
+                else if (grabbedSaying.length>2){
+                    start.add(grabbedSaying[0]);
+                    end.add(grabbedSaying[grabbedSaying.length-1]);
+                    middle.add(grabbedSaying[1]);
+                }
             }
         }
         saying = start.get((int) (Math.random()*start.size()-1))+"-";
-//        int mid = (int) (Math.random()*3-1);
-//        int index;
-//        for (int i=0; i<=mid;i++){
-//            index = (int) (Math.random()*middle.size()-1);
-//            saying = saying + middle.get(index)+"-";
-//            middle.remove(index);
-//        }
+        int size = (int) (Math.random()*110-1);
+        
+        if (size>90)
+            saying = saying+middle.get((int) (Math.random()*middle.size()-1))+"-";
+        
         saying = saying+end.get((int) (Math.random()*end.size()-1));
         return (saying);
         
     }
     private String randCommaSeparatedSaying() {
-        String saying = "";
         ArrayList<String> start = new ArrayList<String>();
         ArrayList<String> end = new ArrayList<String>();
         
@@ -121,7 +115,6 @@ public class EnglishSayings extends ListenerAdapter {
                 try {
                     start.add(sayings.get(i).split(",")[0]);
                     end.add(sayings.get(i).split(",")[1]);
-//                System.out.println(sayings.get(i));
                 }
                 catch (Exception e){
                     e.printStackTrace();
@@ -130,5 +123,4 @@ public class EnglishSayings extends ListenerAdapter {
         }
         return (start.get((int) (Math.random()*start.size()-1))+","+end.get((int) (Math.random()*end.size()-1)));
     }
-    
 }
